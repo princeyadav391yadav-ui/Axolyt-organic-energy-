@@ -1,0 +1,6 @@
+{
+  "name": "AXOLYT Organic Energy",
+  "description": "Nature. Energy. Elevated. Premium organic energy drinks powered by plant-based adaptogens, botanicals, and clean green energy.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
