@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, ShieldCheck, Tag, Sparkles } from 'lucide-react';
 import { CartItem } from '../types';
+import { ProductImage } from './ProductImage';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -127,11 +128,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   key={item.id}
                   className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/20 flex gap-3 items-center text-left"
                 >
-                  <img
+                  <ProductImage
                     src={item.image}
                     alt={item.name}
-                    className="w-14 h-14 rounded-xl object-cover shrink-0 bg-black/40"
-                    referrerPolicy="no-referrer"
+                    productName={item.name}
+                    className="w-14 h-14 rounded-xl shrink-0 bg-black/40"
                   />
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-bold text-white truncate">{item.name}</h4>

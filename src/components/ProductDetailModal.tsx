@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Star, Zap, Shield, Check, ShoppingBag, Droplets, Heart } from 'lucide-react';
 import { Product } from '../types';
+import { ProductImage } from './ProductImage';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -45,11 +46,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </div>
 
           <div className="relative w-full max-w-[320px] aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
-            <img
+            <ProductImage
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
+              productName={product.name}
+              accentColor={product.accentColor}
+              className="w-full h-full"
             />
           </div>
 

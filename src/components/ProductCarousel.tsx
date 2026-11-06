@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, ShoppingBag, Eye, Star, Sparkles, Filter, Grid, SlidersHorizontal } from 'lucide-react';
 import { Product } from '../types';
+import { ProductImage } from './ProductImage';
 
 interface ProductCarouselProps {
   products: Product[];
@@ -311,11 +312,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
           onClick={() => onOpenDetails(product)}
           className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-black/40 cursor-pointer mb-5 group/img"
         >
-          <img
+          <ProductImage
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
-            referrerPolicy="no-referrer"
+            productName={product.name}
+            accentColor={product.accentColor}
+            className="w-full h-full transition-transform duration-500 group-hover/img:scale-105"
           />
           {/* Quick View Overlay on hover */}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">

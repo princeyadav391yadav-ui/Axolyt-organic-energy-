@@ -1,4 +1,10 @@
 import { Product, IngredientDetail, JournalArticle } from '../types';
+import greenSpringImg from '../assets/images/can_green_spring.jpg';
+import wildBerryImg from '../assets/images/can_wild_berry.jpg';
+import tropicRushImg from '../assets/images/can_tropic_rush.jpg';
+import glacierFrostImg from '../assets/images/can_glacier_frost.jpg';
+import crimsonZenImg from '../assets/images/can_crimson_zen.jpg';
+import goldenDawnImg from '../assets/images/can_golden_dawn.jpg';
 
 export const PRODUCTS: Product[] = [
   {
@@ -11,7 +17,7 @@ export const PRODUCTS: Product[] = [
     badge: 'Best Seller',
     priceSingle: 3.49,
     pricePack12: 36.99,
-    image: '/src/assets/images/can_green_spring_1793959512164.jpg',
+    image: greenSpringImg || '/images/can_green_spring.jpg',
     description: 'Crisp Fuji apple and botanical garden mint, charged with organic Japanese ceremonial matcha and yerba mate.',
     longDescription: 'Green Spring captures the crisp, refreshing awakening of a rain-soaked alpine forest. Built upon a base of cold-extracted organic green tea and premium ceremonial matcha, balanced with sweet mountain apple and spearmint botanicals. Delivers a clean, jitter-free focus with 120mg of plant-derived caffeine and natural L-Theanine.',
     caffeineMg: 120,
@@ -45,7 +51,7 @@ export const PRODUCTS: Product[] = [
     badge: 'Antioxidant Rich',
     priceSingle: 3.49,
     pricePack12: 36.99,
-    image: '/src/assets/images/can_wild_berry_1793959513074.jpg',
+    image: wildBerryImg || '/images/can_wild_berry.jpg',
     description: 'Sun-ripened blackberries, wild European elderberry, and Amazonian acai infused with raw organic guarana seed.',
     longDescription: 'An intense, velvety antioxidant powerhouse. Wild Berry marries hand-harvested wild forest elderberries, dark Marion blackberries, and organic acai berry puree. Formulated with raw wild guarana seed and adaptogenic Rhodiola Rosea to support sustained cellular endurance, mental stamina, and immune resilience.',
     caffeineMg: 130,
@@ -79,7 +85,7 @@ export const PRODUCTS: Product[] = [
     badge: 'Customer Favorite',
     priceSingle: 3.49,
     pricePack12: 36.99,
-    image: '/src/assets/images/can_tropic_rush_1793959513741.jpg',
+    image: tropicRushImg || '/images/can_tropic_rush.jpg',
     description: 'Exotic passionfruit and juicy blood orange balanced with warming organic ginger root and South American yerba mate.',
     longDescription: 'A vibrant burst of tropical botanical vitality. Tropic Rush blends golden Hawaiian passionfruit nectar with Spanish blood orange and cold-pressed spicy ginger root. Powered by shade-grown yerba mate and organic Panax ginseng, providing a euphoric boost that sparks creative clarity and all-day vitality.',
     caffeineMg: 125,
@@ -113,7 +119,7 @@ export const PRODUCTS: Product[] = [
     badge: 'Zero Sugar & Icy Clean',
     priceSingle: 3.49,
     pricePack12: 36.99,
-    image: '/src/assets/images/can_glacier_frost_1793960640710.jpg',
+    image: glacierFrostImg || '/images/can_glacier_frost.jpg',
     description: 'Ultra-crisp organic cucumber, tart Japanese yuzu citrus, and alpine deep-spring electrolytes with Siberian ginseng.',
     longDescription: 'Engineered for intense physical clarity and instant cellular refreshment. Glacier Frost captures the brisk air of high alpine glaciers. Cold-brewed white tea is infused with freshly pressed organic cucumber and aromatic Japanese yuzu citrus. Loaded with bio-available deep mountain electrolytes and Siberian Ginseng (Eleuthero) to keep your mind razor-sharp and neuromuscular reflexes firing without a grain of added sugar.',
     caffeineMg: 110,
@@ -147,7 +153,7 @@ export const PRODUCTS: Product[] = [
     badge: 'Calm Focus & Recovery',
     priceSingle: 3.49,
     pricePack12: 36.99,
-    image: '/src/assets/images/can_crimson_zen_1793960641110.jpg',
+    image: crimsonZenImg || '/images/can_crimson_zen.jpg',
     description: 'Juicy tropical dragonfruit, steeped organic hibiscus calyces, and Montmorency tart cherry with KSM-66 Ashwagandha.',
     longDescription: 'Where zen tranquility meets dynamic kinetic energy. Crimson Zen harnesses vibrant pitaya (dragonfruit), hand-harvested Egyptian hibiscus blossoms, and organic tart Montmorency cherry juice. Infused with clinically studied KSM-66 Ashwagandha and natural organic caffeine to harmonize cognitive flow state, reduce exercise-induced oxidative stress, and deliver blissful sustained performance.',
     caffeineMg: 125,
@@ -181,7 +187,7 @@ export const PRODUCTS: Product[] = [
     badge: 'Morning Vitality',
     priceSingle: 3.49,
     pricePack12: 36.99,
-    image: '/src/assets/images/can_golden_dawn_1793960640380.jpg',
+    image: goldenDawnImg || '/images/can_golden_dawn.jpg',
     description: 'Sun-drenched Alphonso mango, fresh cold-pressed turmeric root, and Ceylon cinnamon powered by raw Amazonian guayusa.',
     longDescription: 'An awakening sunrise in a can. Golden Dawn is formulated for ambitious mornings and sustained stamina. Ripe tropical Alphonso mango puree is blended with anti-inflammatory organic turmeric root, aromatic Ceylon cinnamon, and wild Peruvian maca root. Powered by shade-grown Amazonian guayusa leaves, this golden elixir produces smooth, warm vitality and creative drive.',
     caffeineMg: 130,

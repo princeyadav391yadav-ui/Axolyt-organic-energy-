@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, Sparkles, ShieldCheck, Zap, Leaf, Check, Heart } from 'lucide-react';
 import { Product } from '../types';
+import { ProductImage } from './ProductImage';
+import heroWaterfallImg from '../assets/images/hero_waterfall_forest.jpg';
 
 interface HeroProps {
   products: Product[];
@@ -10,7 +12,17 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ products, onAddToCart, onOpenDetails }) => {
   const [selectedProductIndex, setSelectedProductIndex] = useState(0);
+  const [bgSrc, setBgSrc] = useState(heroWaterfallImg || '/images/hero_waterfall_forest.jpg');
   const activeProduct = products[selectedProductIndex] || products[0];
+
+  const handleBgError = () => {
+    // If bundled asset fails or is not found, fallback to public paths
+    if (bgSrc !== '/images/hero_waterfall_forest.jpg') {
+      setBgSrc('/images/hero_waterfall_forest.jpg');
+    } else {
+      setBgSrc('./images/hero_waterfall_forest.jpg');
+    }
+  };
 
   const scrollToShop = () => {
     const el = document.getElementById('shop');
@@ -22,12 +34,13 @@ export const Hero: React.FC<HeroProps> = ({ products, onAddToCart, onOpenDetails
   return (
     <section id="home" className="relative min-h-[92vh] flex items-center pt-24 pb-16 overflow-hidden">
       {/* Background Image: Pristine Waterfall & Mystic Forest */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-[#040e07]">
         <img
-          src="/src/assets/images/hero_waterfall_forest_1793959511579.jpg"
+          src={bgSrc}
           alt="Pristine mystical rainforest with waterfall"
           className="w-full h-full object-cover object-center scale-105 filter brightness-75 contrast-110"
           referrerPolicy="no-referrer"
+          onError={handleBgError}
         />
         {/* Measured Scrim & Radial Vignette for WCAG AA readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#040e07]/95 via-[#040e07]/80 to-[#040e07]/60" />
@@ -135,11 +148,12 @@ export const Hero: React.FC<HeroProps> = ({ products, onAddToCart, onOpenDetails
 
                 {/* Hero Product Image */}
                 <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-black/40 flex items-center justify-center p-2">
-                  <img
+                  <ProductImage
                     src={activeProduct.image}
                     alt={`${activeProduct.name} Energy Drink Can`}
-                    className="w-full h-full object-cover rounded-xl transition-all duration-500 group-hover:scale-105"
-                    referrerPolicy="no-referrer"
+                    productName={activeProduct.name}
+                    accentColor={activeProduct.accentColor}
+                    className="w-full h-full rounded-xl transition-all duration-500 group-hover:scale-105"
                   />
                   {/* Subtle inner gloss reflection */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none opacity-40" />

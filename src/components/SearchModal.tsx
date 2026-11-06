@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Search, Sparkles, ArrowRight, Zap, Leaf, BookOpen } from 'lucide-react';
 import { PRODUCTS, INGREDIENT_DETAILS, ARTICLES } from '../data/products';
 import { Product } from '../types';
+import { ProductImage } from './ProductImage';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -85,11 +86,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                     className="p-3 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/20 flex items-center justify-between cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <img
+                      <ProductImage
                         src={p.image}
                         alt={p.name}
-                        className="w-10 h-10 rounded-lg object-cover bg-black/40"
-                        referrerPolicy="no-referrer"
+                        productName={p.name}
+                        className="w-10 h-10 rounded-lg bg-black/40"
                       />
                       <div>
                         <div className="text-sm font-bold text-white">{p.name}</div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, ShieldCheck, CreditCard, Truck, ArrowLeft, PackageCheck } from 'lucide-react';
 import { CartItem } from '../types';
+import { ProductImage } from './ProductImage';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -384,11 +385,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                   {items.map((item) => (
                     <div key={item.id} className="flex items-center gap-3 text-xs">
-                      <img
+                      <ProductImage
                         src={item.image}
                         alt={item.name}
-                        className="w-10 h-10 rounded-lg object-cover bg-black/40"
-                        referrerPolicy="no-referrer"
+                        productName={item.name}
+                        className="w-10 h-10 rounded-lg bg-black/40"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-white truncate">{item.name}</div>
