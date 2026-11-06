@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface NewsletterSectionProps {
   onSuccess: (email: string) => void;
@@ -10,7 +12,7 @@ export const NewsletterSection: React.FC<NewsletterSectionProps> = ({ onSuccess 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -21,10 +23,18 @@ export const NewsletterSection: React.FC<NewsletterSectionProps> = ({ onSuccess 
     }
 
     setStatus('loading');
-    setTimeout(() => {
-      setStatus('success');
-      onSuccess(email);
-    }, 600);
+    try {
+      const sanitizedId = email.trim().toLowerCase().replace(/[^a-zA-Z0-9_\-]/g, '_');
+      await setDoc(doc(db, 'newsletter_subscribers', sanitizedId), {
+        email: email.trim().toLowerCase(),
+        subscribedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn('Newsletter firestore sync:', err);
+    }
+
+    setStatus('success');
+    onSuccess(email);
   };
 
   return (

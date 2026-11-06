@@ -1,0 +1,102 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny catch-all (Pillar 1 / Global Safety Net)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Entity Validation Helpers (Strict schema + boundary guards)
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email', 'memberTier']) &&
+        data.keys().hasOnly(['name', 'email', 'memberTier', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.email is string && data.email.size() > 3 && data.email.size() <= 150 &&
+        data.memberTier is string && data.memberTier.size() <= 60;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['userId', 'id', 'items', 'total', 'status', 'carrier', 'trackingNumber']) &&
+        data.keys().hasOnly(['userId', 'id', 'date', 'items', 'total', 'status', 'carrier', 'trackingNumber', 'estimatedDelivery', 'currentStepIndex', 'steps', 'createdAt', 'updatedAt']) &&
+        data.userId is string && data.userId.size() <= 128 &&
+        data.id is string && data.id.size() <= 40 &&
+        data.items is string && data.items.size() <= 500 &&
+        data.total is number && data.total >= 0 &&
+        data.status in ['Confirmed', 'Processing', 'In Transit', 'Out for Delivery', 'Delivered'] &&
+        data.carrier is string && data.carrier.size() <= 100 &&
+        data.trackingNumber is string && data.trackingNumber.size() <= 60;
+    }
+
+    function isValidNewsletterSubscriber(data) {
+      return data.keys().hasAll(['email']) &&
+        data.keys().hasOnly(['email', 'subscribedAt']) &&
+        data.email is string && data.email.size() > 3 && data.email.size() <= 150;
+    }
+
+    function isValidContactInquiry(data) {
+      return data.keys().hasAll(['name', 'email', 'message']) &&
+        data.keys().hasOnly(['name', 'email', 'phone', 'message', 'createdAt']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.email is string && data.email.size() > 3 && data.email.size() <= 150 &&
+        data.message is string && data.message.size() > 0 && data.message.size() <= 2000;
+    }
+
+    // User Profile Documents
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false; // Disallow querying user profiles
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) &&
+        incoming().email == existing().email &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'memberTier', 'updatedAt']);
+      allow delete: if false;
+
+      // User Order Subcollection
+      match /orders/{orderId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(orderId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(orderId) &&
+          isValidOrder(incoming()) && incoming().userId == request.auth.uid;
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(orderId) &&
+          isValidOrder(incoming()) && incoming().userId == existing().userId &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['currentStepIndex', 'status', 'updatedAt', 'steps']);
+        allow delete: if false;
+      }
+    }
+
+    // Newsletter Subscriptions
+    match /newsletter_subscribers/{subscriberId} {
+      allow create: if isValidId(subscriberId) && isValidNewsletterSubscriber(incoming());
+      allow read, update, delete: if false;
+    }
+
+    // Contact Inquiries
+    match /contact_inquiries/{inquiryId} {
+      allow create: if isValidId(inquiryId) && isValidContactInquiry(incoming());
+      allow read, update, delete: if false;
+    }
+  }
+}

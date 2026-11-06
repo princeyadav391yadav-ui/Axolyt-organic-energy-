@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Phone, MapPin, Mail, Clock, Send, CheckCircle2, MessageCircle, ExternalLink, Navigation } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface ContactSectionProps {
   onNotify?: (type: 'success' | 'info', title: string, message?: string) => void;
@@ -16,18 +18,29 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onNotify }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.message.trim()) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      if (onNotify) {
-        onNotify('success', 'Message Sent!', 'Our team in Hansi, Haryana will respond shortly.');
-      }
-    }, 600);
+    try {
+      const inquiryId = `inquiry_${Date.now()}`;
+      await setDoc(doc(db, 'contact_inquiries', inquiryId), {
+        name: formData.name.trim(),
+        email: formData.email.trim() || 'contact@axolytenergy.com',
+        phone: formData.phone.trim() || '',
+        message: `[${formData.subject}] ${formData.message.trim()}`,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn('Contact firestore sync:', err);
+    }
+
+    setIsSubmitting(false);
+    setIsSubmitted(true);
+    if (onNotify) {
+      onNotify('success', 'Message Sent!', 'Our team in Hansi, Haryana will respond shortly.');
+    }
   };
 
   const googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=Hansi,+Haryana+125033';

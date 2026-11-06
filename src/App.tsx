@@ -24,6 +24,9 @@ import { SearchModal } from './components/SearchModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { PRODUCTS } from './data/products';
 import { Product, CartItem, UserProfile, UserOrder } from './types';
+import { auth, db, testFirestoreConnection, handleFirestoreError, OperationType } from './lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc, getDoc, collection, onSnapshot, updateDoc } from 'firebase/firestore';
 
 export default function App() {
   // 1. Cart State (Persistent via localStorage)
@@ -185,6 +188,78 @@ export default function App() {
     }
   }, [user]);
 
+  // 2b. Firebase Boot Connection Test & Realtime Auth/Order Sync
+  useEffect(() => {
+    testFirestoreConnection();
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        const uid = fbUser.uid;
+        const userDocRef = doc(db, 'users', uid);
+
+        try {
+          const userSnap = await getDoc(userDocRef);
+          if (!userSnap.exists()) {
+            await setDoc(userDocRef, {
+              name: fbUser.displayName || 'AXOLYT Member',
+              email: fbUser.email || '',
+              memberTier: 'Botanical Society - Gold Member',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+          } else {
+            const data = userSnap.data();
+            setUser((prev) => ({
+              ...prev,
+              uid,
+              name: data.name || prev.name,
+              email: data.email || prev.email,
+              memberTier: data.memberTier || prev.memberTier,
+              isLoggedIn: true,
+            }));
+          }
+        } catch (err) {
+          handleFirestoreError(err, OperationType.GET, `users/${uid}`);
+        }
+
+        // Attach Realtime Listener for Orders
+        const ordersCol = collection(db, 'users', uid, 'orders');
+        const unsubscribeOrders = onSnapshot(
+          ordersCol,
+          (snapshot) => {
+            const cloudOrders: UserOrder[] = [];
+            snapshot.forEach((d) => {
+              cloudOrders.push(d.data() as UserOrder);
+            });
+            if (cloudOrders.length > 0) {
+              setUser((prev) => ({
+                ...prev,
+                orders: cloudOrders,
+              }));
+            }
+          },
+          (err) => {
+            handleFirestoreError(err, OperationType.GET, `users/${uid}/orders`);
+          }
+        );
+
+        return () => {
+          unsubscribeOrders();
+        };
+      } else {
+        setUser((prev) => ({
+          ...prev,
+          uid: undefined,
+          isLoggedIn: false,
+        }));
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+    };
+  }, []);
+
   // 3. Discount & Promo State
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [discountRate, setDiscountRate] = useState<number>(0);
@@ -339,11 +414,33 @@ export default function App() {
       ],
     };
 
-    // Append to user orders
+    // Append to user orders in local state
     setUser((prev) => ({
       ...prev,
       orders: [newOrder, ...prev.orders],
     }));
+
+    // If authenticated in Firebase, persist order to Firestore
+    if (auth.currentUser) {
+      const orderRef = doc(db, 'users', auth.currentUser.uid, 'orders', orderId);
+      setDoc(orderRef, {
+        userId: auth.currentUser.uid,
+        id: newOrder.id,
+        date: newOrder.date,
+        items: newOrder.items,
+        total: newOrder.total,
+        status: newOrder.status,
+        carrier: newOrder.carrier,
+        trackingNumber: newOrder.trackingNumber,
+        estimatedDelivery: newOrder.estimatedDelivery,
+        currentStepIndex: newOrder.currentStepIndex,
+        steps: newOrder.steps,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }).catch((err) => {
+        handleFirestoreError(err, OperationType.CREATE, `users/${auth.currentUser?.uid}/orders/${orderId}`);
+      });
+    }
 
     // Clear cart
     setCart([]);
@@ -359,13 +456,17 @@ export default function App() {
       'Delivered',
     ];
 
+    let nextIndex = 0;
+    let nextStatus: UserOrder['status'] = 'Confirmed';
+    let updatedSteps: UserOrder['steps'] = [];
+
     setUser((prev) => ({
       ...prev,
       orders: prev.orders.map((ord) => {
         if (ord.id === orderId) {
-          const nextIndex = (ord.currentStepIndex + 1) % 5;
-          const nextStatus = statusMap[nextIndex];
-          const updatedSteps = ord.steps.map((st, i) => ({
+          nextIndex = (ord.currentStepIndex + 1) % 5;
+          nextStatus = statusMap[nextIndex];
+          updatedSteps = ord.steps.map((st, i) => ({
             ...st,
             isComplete: i <= nextIndex,
             isCurrent: i === nextIndex,
@@ -387,6 +488,19 @@ export default function App() {
         return ord;
       }),
     }));
+
+    // Sync updated shipping step to Firestore if authenticated
+    if (auth.currentUser) {
+      const orderRef = doc(db, 'users', auth.currentUser.uid, 'orders', orderId);
+      updateDoc(orderRef, {
+        currentStepIndex: nextIndex,
+        status: nextStatus,
+        steps: updatedSteps,
+        updatedAt: new Date().toISOString(),
+      }).catch((err) => {
+        handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser?.uid}/orders/${orderId}`);
+      });
+    }
   };
 
   const handleLogin = (name: string, email: string) => {

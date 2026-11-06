@@ -1,0 +1,169 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document storing basic account and membership tier data",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User account email",
+          "maxLength": 150
+        },
+        "memberTier": {
+          "type": "string",
+          "description": "Botanical society loyalty membership tier",
+          "maxLength": 60
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of profile creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of latest update"
+        }
+      },
+      "required": ["name", "email", "memberTier"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order with cold-chain tracking details and invoice data",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner user UID",
+          "maxLength": 128
+        },
+        "id": {
+          "type": "string",
+          "description": "Human-readable order tracking ID (e.g. AXO-948120)",
+          "maxLength": 40
+        },
+        "date": {
+          "type": "string",
+          "description": "Order placement date string",
+          "maxLength": 50
+        },
+        "items": {
+          "type": "string",
+          "description": "Summary of purchased flavors and pack options",
+          "maxLength": 500
+        },
+        "total": {
+          "type": "number",
+          "description": "Total purchase amount in USD"
+        },
+        "status": {
+          "type": "string",
+          "description": "Shipping status lifecycle",
+          "enum": ["Confirmed", "Processing", "In Transit", "Out for Delivery", "Delivered"]
+        },
+        "carrier": {
+          "type": "string",
+          "description": "Cold-chain or priority eco carrier name",
+          "maxLength": 100
+        },
+        "trackingNumber": {
+          "type": "string",
+          "description": "Carrier tracking number",
+          "maxLength": 60
+        },
+        "estimatedDelivery": {
+          "type": "string",
+          "description": "Human-readable estimated delivery time",
+          "maxLength": 80
+        },
+        "currentStepIndex": {
+          "type": "number",
+          "description": "Current progress index in the delivery pipeline (0 to 4)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when order was submitted"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when order was last updated"
+        }
+      },
+      "required": ["userId", "id", "items", "total", "status", "carrier", "trackingNumber"]
+    },
+    "NewsletterSubscriber": {
+      "title": "NewsletterSubscriber",
+      "description": "Subscribed email address for product updates and vitality discounts",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Subscribed email address",
+          "maxLength": 150
+        },
+        "subscribedAt": {
+          "type": "string",
+          "description": "ISO timestamp of subscription"
+        }
+      },
+      "required": ["email"]
+    },
+    "ContactInquiry": {
+      "title": "ContactInquiry",
+      "description": "Direct inquiries from customer and wholesale partners",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Inquirer full name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email address",
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "description": "Optional telephone or mobile number",
+          "maxLength": 30
+        },
+        "message": {
+          "type": "string",
+          "description": "Inquiry or partnership message",
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of inquiry submission"
+        }
+      },
+      "required": ["name", "email", "message"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document owned by the authenticated user"
+    },
+    "/users/{userId}/orders/{orderId}": {
+      "schema": "Order",
+      "description": "User order records with real-time tracking progress"
+    },
+    "/newsletter_subscribers/{subscriberId}": {
+      "schema": "NewsletterSubscriber",
+      "description": "Email list subscriptions with public create access"
+    },
+    "/contact_inquiries/{inquiryId}": {
+      "schema": "ContactInquiry",
+      "description": "Contact form submissions"
+    }
+  }
+}
