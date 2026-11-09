@@ -22,7 +22,6 @@ import { OurStoryModal } from './components/OurStoryModal';
 import { AuthModal } from './components/AuthModal';
 import { SearchModal } from './components/SearchModal';
 import { AdminDashboard } from './components/AdminDashboard';
-import { ProjectReportModal } from './components/ProjectReportModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { PRODUCTS } from './data/products';
 import { Product, CartItem, UserProfile, UserOrder, AppConfig } from './types';
@@ -130,7 +129,7 @@ export default function App() {
             }));
           }
         } catch (err) {
-          handleFirestoreError(err, OperationType.GET, `users/${uid}`);
+          console.warn(`User profile fetch notice for ${uid}:`, err);
         }
 
         // If checkout was initiated before login, auto-open checkout now
@@ -156,7 +155,7 @@ export default function App() {
             }));
           },
           (err) => {
-            handleFirestoreError(err, OperationType.GET, `users/${uid}/orders`);
+            console.warn(`Orders snapshot notice for ${uid}:`, err.message);
           }
         );
 
@@ -193,11 +192,17 @@ export default function App() {
   });
 
   useEffect(() => {
-    const unsubConfig = onSnapshot(doc(db, 'settings', 'app_config'), (snap) => {
-      if (snap.exists()) {
-        setAppConfig(snap.data() as AppConfig);
+    const unsubConfig = onSnapshot(
+      doc(db, 'settings', 'app_config'),
+      (snap) => {
+        if (snap.exists()) {
+          setAppConfig(snap.data() as AppConfig);
+        }
+      },
+      (err) => {
+        console.warn('App settings snapshot notice:', err.message);
       }
-    });
+    );
     return () => unsubConfig();
   }, []);
 
@@ -208,7 +213,6 @@ export default function App() {
   const [isStoryOpen, setIsStoryOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [isReportOpen, setIsReportOpen] = useState(false);
   const [selectedProductDetail, setSelectedProductDetail] = useState<Product | null>(null);
 
   // Pending checkout gate: when guest clicks checkout, hold state until authentication completes
@@ -553,7 +557,6 @@ export default function App() {
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenStory={() => setIsStoryOpen(true)}
         onOpenAdmin={() => setIsAdminOpen(true)}
-        onOpenReport={() => setIsReportOpen(true)}
         user={user}
       />
 
@@ -611,7 +614,6 @@ export default function App() {
         onOpenShop={() => scrollToSection('shop')}
         onOpenBlog={() => scrollToSection('blog')}
         onOpenAdmin={() => setIsAdminOpen(true)}
-        onOpenReport={() => setIsReportOpen(true)}
         isAdmin={user.role === 'admin' || user.email === 'princeyadav391yadav@gmail.com'}
       />
 
@@ -711,12 +713,6 @@ export default function App() {
             orders: prev.orders.filter((o) => o.id !== orderId),
           }));
         }}
-      />
-
-      {/* College Project Report Modal (PDF / DOCX Download & Verification) */}
-      <ProjectReportModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
       />
     </div>
   );

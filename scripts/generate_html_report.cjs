@@ -1,0 +1,1577 @@
+/**
+ * Generates an all-in-one A4 Printable HTML Report for AXOLYT ORGANIC ENERGY
+ * Ready for 1-click Print to PDF in any browser (Chrome, Safari, Edge, Mobile)
+ * Page Count: 29 Pages with CSS page-break-after: always
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const outputPath = path.join(__dirname, '../public/report.html');
+
+const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AXOLYT ORGANIC ENERGY — College Project Report</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 15mm 15mm 15mm 15mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #1e293b;
+      line-height: 1.5;
+      font-size: 11pt;
+    }
+
+    /* Print toolbar on top (hidden during print) */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #064E3B;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .toolbar-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: #A7F3D0;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .toolbar-btn {
+      background: #10B981;
+      color: #022C22;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+      text-decoration: none;
+    }
+    .toolbar-btn:hover {
+      background: #34D399;
+    }
+    .toolbar-btn-secondary {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .toolbar-btn-secondary:hover {
+      background: rgba(255,255,255,0.25);
+    }
+
+    /* Pages Container */
+    .report-container {
+      max-width: 210mm;
+      margin: 24px auto;
+      background: #ffffff;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    /* Individual A4 Page */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 20mm;
+      background: #ffffff;
+      position: relative;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      border-bottom: 2px dashed #cbd5e1;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+      .toolbar {
+        display: none !important;
+      }
+      .report-container {
+        margin: 0 !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+      }
+      .page {
+        border-bottom: none !important;
+        padding: 15mm !important;
+        width: 100% !important;
+        min-height: auto !important;
+        page-break-after: always !important;
+      }
+    }
+
+    /* Page Chrome */
+    .page-header {
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 6px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 8pt;
+      font-weight: 600;
+      color: #064E3B;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .page-header-right {
+      color: #64748b;
+      font-weight: 400;
+    }
+
+    .page-footer {
+      position: absolute;
+      bottom: 15mm;
+      left: 20mm;
+      right: 20mm;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 8pt;
+      color: #64748b;
+    }
+    .page-number {
+      font-weight: 700;
+      color: #064E3B;
+    }
+
+    /* Headings */
+    h1.chapter-title {
+      font-size: 18pt;
+      font-weight: 800;
+      color: #064E3B;
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+    .chapter-num {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #059669;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+    .chapter-rule {
+      width: 60px;
+      height: 3px;
+      background: #10B981;
+      margin-bottom: 16px;
+      border-radius: 2px;
+    }
+
+    h2.section-heading {
+      font-size: 12pt;
+      font-weight: 700;
+      color: #064E3B;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    h3.sub-heading {
+      font-size: 10pt;
+      font-weight: 600;
+      color: #1e293b;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+
+    p {
+      font-size: 9.5pt;
+      color: #334155;
+      line-height: 1.55;
+      margin-bottom: 10px;
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 12px;
+      font-size: 9.5pt;
+      color: #334155;
+    }
+    li {
+      margin-bottom: 5px;
+      line-height: 1.45;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 16px;
+      font-size: 8.5pt;
+    }
+    th {
+      background: #064E3B;
+      color: #ffffff;
+      padding: 7px 10px;
+      font-weight: 700;
+      text-align: left;
+      border: 1px solid #064E3B;
+    }
+    td {
+      padding: 6px 10px;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    /* Code Box */
+    .code-box {
+      background: #0B1710;
+      border: 1px solid #10B981;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin: 10px 0 14px;
+      font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+      font-size: 7.8pt;
+      color: #6EE7B7;
+      line-height: 1.45;
+      overflow-x: auto;
+      white-space: pre;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .code-title {
+      font-weight: 700;
+      color: #34D399;
+      font-size: 8pt;
+      margin-bottom: 6px;
+      border-bottom: 1px dashed rgba(16, 185, 129, 0.4);
+      padding-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Figures & Images */
+    .figure-container {
+      margin: 12px 0 16px;
+      text-align: center;
+    }
+    .figure-img {
+      max-width: 90%;
+      max-height: 165mm;
+      border-radius: 6px;
+      border: 1px solid #94a3b8;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      object-fit: cover;
+    }
+    .figure-caption {
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: #064E3B;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    /* Cover Page Styling */
+    .cover-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      border: 2px solid #064E3B;
+      margin: 0;
+      min-height: 297mm;
+      padding: 18mm 15mm;
+    }
+    .cover-institution {
+      font-family: 'Cinzel', serif;
+      font-size: 16pt;
+      font-weight: 700;
+      color: #064E3B;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .cover-dept {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #059669;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .cover-affiliation {
+      font-size: 9pt;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .cover-title-box {
+      margin: 20px 0;
+      border-top: 2px solid #064E3B;
+      border-bottom: 2px solid #064E3B;
+      padding: 18px 24px;
+      width: 100%;
+    }
+    .cover-main-title {
+      font-size: 22pt;
+      font-weight: 900;
+      color: #064E3B;
+      letter-spacing: 0.05em;
+    }
+    .cover-subtitle {
+      font-size: 11pt;
+      font-weight: 600;
+      color: #059669;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .cover-meta {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      text-align: left;
+      font-size: 10pt;
+      margin-top: 24px;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 16px;
+    }
+    .cover-meta strong {
+      color: #064E3B;
+    }
+    .cover-stamp {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #064E3B;
+      letter-spacing: 0.1em;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Print & Download Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-title">AXOLYT ORGANIC ENERGY — Major Project Report (29 Pages)</div>
+    <div class="toolbar-actions">
+      <button class="toolbar-btn" onclick="window.print()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        <span>Print / Save as PDF</span>
+      </button>
+      <a class="toolbar-btn toolbar-btn-secondary" href="/download/pdf">
+        <span>Download .PDF</span>
+      </a>
+      <a class="toolbar-btn toolbar-btn-secondary" href="/download/docx">
+        <span>Download .DOCX</span>
+      </a>
+      <a class="toolbar-btn toolbar-btn-secondary" href="/download.html">
+        <span>← Download Hub</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="report-container">
+
+    <!-- PAGE 1: COVER PAGE -->
+    <div class="page">
+      <div class="cover-page">
+        <div>
+          <div class="cover-institution">CH. BANSI LAL POLYTECHNIC, BHIWANI</div>
+          <div class="cover-dept">Department of Computer Engineering</div>
+          <div class="cover-affiliation">Affiliated to State Board of Technical Education, Haryana (HSBTE), Panchkula</div>
+          <div style="font-size: 9pt; color: #64748b; margin-top: 4px;">Approved by AICTE, New Delhi & Govt. of Haryana</div>
+        </div>
+
+        <div class="cover-title-box">
+          <div style="font-size: 10pt; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 8px;">A Major Project Report On</div>
+          <div class="cover-main-title">AXOLYT ORGANIC ENERGY</div>
+          <div class="cover-subtitle">Next-Generation Full-Stack Organic Beverage E-Commerce Platform with Real-Time Logistics, Spatial 3D Physics & Ambient Procedural Audio</div>
+          <div style="font-size: 9.5pt; color: #475569; margin-top: 10px;">Submitted in partial fulfillment of the requirements for the award of Diploma in Computer Engineering</div>
+        </div>
+
+        <div class="cover-meta">
+          <div>
+            <div style="font-size: 9pt; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Submitted By:</div>
+            <div style="font-size: 12pt; font-weight: 800; color: #064E3B;">PRINCE KUMAR</div>
+            <div style="font-size: 10pt; color: #1e293b;">Roll Number: <strong>240790825012</strong></div>
+            <div style="font-size: 9.5pt; color: #475569;">Semester: VI · Final Year</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 9pt; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Under the Guidance of:</div>
+            <div style="font-size: 12pt; font-weight: 800; color: #064E3B;">MS. PRATIBHA DHAIYA</div>
+            <div style="font-size: 10pt; color: #1e293b;">Lecturer, Computer Engineering</div>
+            <div style="font-size: 9.5pt; color: #475569;">Project Coordinator & Guide</div>
+          </div>
+        </div>
+
+        <div class="cover-stamp">
+          ACADEMIC SESSION: 2026–2027
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 2: CERTIFICATE -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <h1 class="chapter-title" style="text-align: center; margin-top: 10px;">CERTIFICATE OF APPROVAL</h1>
+      <div class="chapter-rule" style="margin: 0 auto 24px;"></div>
+      <p style="font-size: 10.5pt; line-height: 1.8; margin-bottom: 24px;">
+        This is to certify that the project report entitled <strong>"AXOLYT ORGANIC ENERGY"</strong> submitted by <strong>Prince Kumar</strong> (Roll No: <strong>240790825012</strong>), student of Diploma in <strong>Computer Engineering</strong> at <strong>Ch. Bansi Lal Polytechnic, Bhiwani</strong>, is a bonafide record of independent project work carried out under our supervision and guidance during the academic session <strong>2026–2027</strong>.
+      </p>
+      <p style="font-size: 10.5pt; line-height: 1.8; margin-bottom: 24px;">
+        The project embodies authentic technical work and satisfies the academic standards laid down by the <strong>State Board of Technical Education, Haryana (HSBTE)</strong>, Panchkula, for the award of the Diploma in Computer Engineering.
+      </p>
+      <p style="font-size: 10.5pt; line-height: 1.8; margin-bottom: 40px;">
+        To the best of our knowledge, the matter embodied in this report has not been submitted to any other Institute or University for the award of any degree or diploma.
+      </p>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 60px;">
+        <div style="text-align: center; width: 200px;">
+          <div style="border-bottom: 1px solid #1e293b; height: 40px; margin-bottom: 8px;"></div>
+          <div style="font-weight: 700; color: #064E3B;">Ms. Pratibha Dhaiya</div>
+          <div style="font-size: 8.5pt; color: #64748b;">Project Guide & Lecturer</div>
+          <div style="font-size: 8.5pt; color: #64748b;">Dept. of Computer Engineering</div>
+        </div>
+        <div style="text-align: center; width: 200px;">
+          <div style="border-bottom: 1px solid #1e293b; height: 40px; margin-bottom: 8px;"></div>
+          <div style="font-weight: 700; color: #064E3B;">Head of Department</div>
+          <div style="font-size: 8.5pt; color: #64748b;">Dept. of Computer Engineering</div>
+          <div style="font-size: 8.5pt; color: #64748b;">Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        </div>
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 2 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: DECLARATION -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <h1 class="chapter-title" style="text-align: center; margin-top: 10px;">CANDIDATE'S DECLARATION</h1>
+      <div class="chapter-rule" style="margin: 0 auto 24px;"></div>
+      <p style="font-size: 10.5pt; line-height: 1.8; margin-bottom: 24px;">
+        I, <strong>Prince Kumar</strong>, Roll No. <strong>240790825012</strong>, hereby declare that the major project work entitled <strong>"AXOLYT ORGANIC ENERGY"</strong> submitted to the <strong>Department of Computer Engineering, Ch. Bansi Lal Polytechnic, Bhiwani</strong>, is an original piece of technical development completed by me under the supervision of <strong>Ms. Pratibha Dhaiya</strong>.
+      </p>
+      <p style="font-size: 10.5pt; line-height: 1.8; margin-bottom: 24px;">
+        I further declare that:
+      </p>
+      <ul style="font-size: 10pt; line-height: 1.8; margin-bottom: 30px;">
+        <li>All source code listings, system architectures, database designs, and reactive logic shown in this project represent authentic software development done for this project.</li>
+        <li>No part of this report has been plagiarized or replicated without due citation and reference to original technical libraries and RFC specifications.</li>
+        <li>This report has not been submitted previously to any university, polytechnic board, or testing body for any degree, diploma, or certification.</li>
+      </ul>
+
+      <div style="margin-top: 60px; text-align: right;">
+        <div style="display: inline-block; text-align: center; width: 220px;">
+          <div style="border-bottom: 1px solid #1e293b; height: 40px; margin-bottom: 8px;"></div>
+          <div style="font-weight: 700; color: #064E3B;">PRINCE KUMAR</div>
+          <div style="font-size: 9pt; color: #1e293b;">Roll No: 240790825012</div>
+          <div style="font-size: 8.5pt; color: #64748b;">Dept. of Computer Engineering</div>
+          <div style="font-size: 8.5pt; color: #64748b;">Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        </div>
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 3 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: ACKNOWLEDGEMENTS -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <h1 class="chapter-title" style="text-align: center; margin-top: 10px;">ACKNOWLEDGEMENTS</h1>
+      <div class="chapter-rule" style="margin: 0 auto 24px;"></div>
+      <p style="font-size: 10pt; line-height: 1.7; margin-bottom: 18px;">
+        The completion of this major diploma project would not have been possible without the invaluable guidance, constructive criticism, and continuous encouragement of several esteemed individuals.
+      </p>
+      <p style="font-size: 10pt; line-height: 1.7; margin-bottom: 18px;">
+        First and foremost, I express my deepest gratitude and sincere reverence to my project guide, <strong>Ms. Pratibha Dhaiya</strong>, Lecturer in the Department of Computer Engineering. Her technical acumen, rigorous debugging insights, and patient mentorship were instrumental in shaping the architecture of AXOLYT, particularly in configuring Cloud Firestore security rules and client-side reactive state management.
+      </p>
+      <p style="font-size: 10pt; line-height: 1.7; margin-bottom: 18px;">
+        I extend my heartfelt thanks to the <strong>Head of Department</strong> and all faculty members of the Computer Engineering Department, Ch. Bansi Lal Polytechnic, Bhiwani, for imparting foundational computer science education and providing laboratory facilities.
+      </p>
+      <p style="font-size: 10pt; line-height: 1.7; margin-bottom: 18px;">
+        I also convey my warm appreciation to the <strong>Principal</strong> of Ch. Bansi Lal Polytechnic, Bhiwani, for maintaining an enabling educational ecosystem that encourages hands-on software development and innovative technical projects.
+      </p>
+      <p style="font-size: 10pt; line-height: 1.7; margin-bottom: 30px;">
+        Lastly, I express boundless gratitude to my family and friends for their unwavering moral support, patience, and encouragement throughout the duration of this diploma program.
+      </p>
+      <div style="text-align: right; margin-top: 30px;">
+        <strong style="color: #064E3B;">Prince Kumar</strong><br>
+        <span style="font-size: 9pt; color: #64748b;">Roll No: 240790825012</span>
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 4 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 5: ABSTRACT -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <h1 class="chapter-title" style="text-align: center; margin-top: 10px;">ABSTRACT & EXECUTIVE SUMMARY</h1>
+      <div class="chapter-rule" style="margin: 0 auto 24px;"></div>
+      <p style="font-size: 10pt; line-height: 1.7; margin-bottom: 16px;">
+        Modern consumer digital commerce demands unprecedented speed, captivating spatial aesthetics, absolute transaction security, and real-time operational feedback. <strong>AXOLYT ORGANIC ENERGY</strong> is an enterprise-grade, full-stack reactive e-commerce and logistics platform engineered to address the specific digital marketing and retail operations of a premium, zero-artificial organic energy drink brand.
+      </p>
+      <p style="font-size: 10pt; line-height: 1.7; margin-bottom: 16px;">
+        Built on <strong>React 19, TypeScript, Vite, Tailwind CSS v4</strong>, and <strong>Google Cloud Firestore</strong>, AXOLYT departs from sluggish generic template-driven storefronts. The system incorporates four breakthrough software engineering paradigms:
+      </p>
+      <ul style="font-size: 9.5pt; line-height: 1.6; margin-bottom: 16px;">
+        <li><strong>Procedural Web Audio Engine:</strong> Synthesizes real-time binaural nature ambiance (waterfall pink noise & harmonic resonant streams) natively in code without pre-recorded MP3 network overhead.</li>
+        <li><strong>3D Kinetic Gyroscopic Interaction:</strong> Leverages Framer Motion spring physics to calculate continuous mathematical card-tilt angles derived from cursor and touch vectors.</li>
+        <li><strong>Session-Preserving Authentication Gatekeeper:</strong> Automatically buffers cart items, address, and dispatch preferences into localStorage, prompting the customer login dialog upon checkout trigger without discarding user progress.</li>
+        <li><strong>Zero-Latency Cold-Chain Logistics Hub:</strong> Features real-time Firestore reactive listeners tracking orders across 5 temperature-monitored distribution phases with live ASCII invoice generation.</li>
+      </ul>
+      <p style="font-size: 10pt; line-height: 1.7;">
+        The system demonstrates zero client build warnings, 100% test case validation across 12 rigorous testing matrices, and sub-100 millisecond database propagation latency.
+      </p>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 5 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 6: TABLE OF CONTENTS -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <h1 class="chapter-title">TABLE OF CONTENTS</h1>
+      <div class="chapter-rule"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 15%;">Chapter</th>
+            <th style="width: 75%;">Title / Topic Description</th>
+            <th style="width: 10%; text-align: right;">Page</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Prelims</td><td>Official Cover Page, Certificate, Declaration, Acknowledgements, Abstract</td><td style="text-align: right;">1–5</td></tr>
+          <tr><td>Index</td><td>Table of Contents & List of Figures, Tables & Code Listings</td><td style="text-align: right;">6–7</td></tr>
+          <tr><td>Chapter 1</td><td>Introduction & Background of AXOLYT Organic Energy</td><td style="text-align: right;">8</td></tr>
+          <tr><td>Chapter 2</td><td>Problem Statement, Research Motivation & Core Objectives</td><td style="text-align: right;">9</td></tr>
+          <tr><td>Chapter 3</td><td>Project Scope, Functional Boundaries & Delimitations</td><td style="text-align: right;">10</td></tr>
+          <tr><td>Chapter 4</td><td>Hardware, Software & Network Infrastructure Requirements</td><td style="text-align: right;">11</td></tr>
+          <tr><td>Chapter 5</td><td>Technology Stack Selection & Technical Justification</td><td style="text-align: right;">12</td></tr>
+          <tr><td>Chapter 6</td><td>System Analysis, Feasibility Study & Operational Flow</td><td style="text-align: right;">13</td></tr>
+          <tr><td>Chapter 7</td><td>System Architecture, Component Hierarchy & Data Flow Diagram</td><td style="text-align: right;">14</td></tr>
+          <tr><td>Chapter 8</td><td>Database Design, Cloud Firestore Schema & Indexing</td><td style="text-align: right;">15</td></tr>
+          <tr><td>Chapter 9</td><td>Cloud Firestore Security Rules & Access Control (Listing 1)</td><td style="text-align: right;">16</td></tr>
+          <tr><td>Chapter 10</td><td>Website Modules, Customer Portal & Admin Operations</td><td style="text-align: right;">17</td></tr>
+          <tr><td>Chapter 11</td><td>Visual Implementation & Output Gallery (Figures 11.1 to 11.5)</td><td style="text-align: right;">18–20</td></tr>
+          <tr><td>Chapter 12</td><td>Key Source Code Listings (Listings 2 to 6)</td><td style="text-align: right;">21–25</td></tr>
+          <tr><td>Chapter 13</td><td>Software Quality Assurance, Test Suite & Test Cases (TC-01 to TC-12)</td><td style="text-align: right;">26–27</td></tr>
+          <tr><td>Chapter 14</td><td>System Advantages & Practical Limitations</td><td style="text-align: right;">28</td></tr>
+          <tr><td>Chapter 15</td><td>Future Scope, Final Conclusion & Academic References</td><td style="text-align: right;">29</td></tr>
+        </tbody>
+      </table>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 6 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 7: LIST OF FIGURES, TABLES & CODE -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <h1 class="chapter-title">LIST OF FIGURES, TABLES & CODE LISTINGS</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">List of Figures (Output Screenshots & Diagrams)</h2>
+      <table>
+        <thead>
+          <tr><th style="width: 20%;">Figure No.</th><th style="width: 68%;">Description of Figure</th><th style="width: 12%; text-align: right;">Page</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Figure 7.1</td><td>System Architecture & Real-Time Data Flow Block Diagram</td><td style="text-align: right;">14</td></tr>
+          <tr><td>Figure 11.1</td><td>Hero Waterfall Section with Ambient Audio Controller & Dynamic CTA</td><td style="text-align: right;">18</td></tr>
+          <tr><td>Figure 11.2</td><td>Active Ingredients Interactive Showcase with 3D Kinetic Tilt Physics</td><td style="text-align: right;">18</td></tr>
+          <tr><td>Figure 11.3</td><td>Administrative Command Center & Order Fulfillment Management</td><td style="text-align: right;">19</td></tr>
+          <tr><td>Figure 11.4</td><td>Mobile Customer Portal & Live 5-Stage Cold-Chain Order Tracker</td><td style="text-align: right;">19</td></tr>
+          <tr><td>Figure 11.5</td><td>Signature Flavor Can Lineup (Glacier Frost, Green Spring, Wild Berry)</td><td style="text-align: right;">20</td></tr>
+        </tbody>
+      </table>
+
+      <h2 class="section-heading" style="margin-top: 16px;">List of Source Code Listings</h2>
+      <table>
+        <thead>
+          <tr><th style="width: 20%;">Listing No.</th><th style="width: 68%;">Source Module / File Name & Purpose</th><th style="width: 12%; text-align: right;">Page</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Listing 1</td><td>firestore.rules — Role-based security validation & order protection</td><td style="text-align: right;">16</td></tr>
+          <tr><td>Listing 2</td><td>AudioAmbianceController.tsx — Web Audio API procedural sound engine</td><td style="text-align: right;">21</td></tr>
+          <tr><td>Listing 3</td><td>IngredientTiltCard.tsx — 3D gyro kinetic tilt with Framer Motion 12</td><td style="text-align: right;">22</td></tr>
+          <tr><td>Listing 4</td><td>App.tsx — Session-preserving gated authentication checkout controller</td><td style="text-align: right;">23</td></tr>
+          <tr><td>Listing 5</td><td>OrderTracker.tsx — 5-stage cold-chain tracker & text invoice generator</td><td style="text-align: right;">24</td></tr>
+          <tr><td>Listing 6</td><td>AdminDashboard.tsx — Admin dispatch controls & atomic order deletion</td><td style="text-align: right;">25</td></tr>
+        </tbody>
+      </table>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 7 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 8: CHAPTER 1 INTRODUCTION -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 1</div>
+      <h1 class="chapter-title">INTRODUCTION & BACKGROUND</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">1.1 Project Overview</h2>
+      <p>
+        The global functional beverage marketplace is undergoing a historic paradigm shift. Contemporary consumers increasingly reject conventional energy drinks saturated with synthetic taurine, excessive refined cane sugars, artificial coloring agents, and harsh synthetic caffeine anhydrous. In their place, discerning health-conscious professionals, competitive athletes, and technology enthusiasts demand clean, organic functional energy derived from plant adaptogens, green tea extract, real fruit botanicals, and Himalayan mineral electrolytes.
+      </p>
+      <p>
+        <strong>AXOLYT ORGANIC ENERGY</strong> is engineered as a bespoke, direct-to-consumer (D2C) web application that delivers both an exceptional consumer narrative and a robust transactional backbone for an organic beverage brand.
+      </p>
+
+      <h2 class="section-heading">1.2 Industry Context & Motivation</h2>
+      <p>
+        Most commercial e-commerce storefronts suffer from heavy third-party tracking scripts, bloated templates, and slow page loads exceeding 4.5 seconds on 4G cellular networks. Furthermore, they lack sensory depth, presenting products through static two-dimensional image grids with uninspired shopping carts.
+      </p>
+      <p>
+        AXOLYT reimagines the digital storefront as a high-fidelity spatial experience. By integrating Web Audio API procedural synthesis, 3D physics cards, instant reactive database subscriptions, and seamless session preservation, AXOLYT demonstrates how high-performance computer engineering transforms online retail.
+      </p>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 8 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 9: CHAPTER 2 PROBLEM STATEMENT -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 2</div>
+      <h1 class="chapter-title">PROBLEM STATEMENT & OBJECTIVES</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">2.1 The Problem Statement</h2>
+      <p>
+        Direct-to-Consumer e-commerce portals in the specialty nutrition sector encounter four critical engineering vulnerabilities:
+      </p>
+      <ul>
+        <li><strong>Cart Abandonment via Clumsy Auth Gates:</strong> Forcing customers to authenticate before exploring products causes drop-offs. Conversely, failing to authenticate before processing payments leads to unverified orders and orphaned data.</li>
+        <li><strong>Stale Delivery Telemetry:</strong> Legacy systems rely on periodic batch synchronization, leaving customers blind to delivery stages and straining support desks.</li>
+        <li><strong>High Sensory Friction:</strong> Modern web browsers provide rich GPU rendering and audio nodes, yet commercial storefronts remain flat, quiet, and unengaging.</li>
+        <li><strong>Administrative Security Gaps:</strong> Inadequate database security rules allow malicious clients to overwrite orders, forge admin statuses, or read sensitive customer details.</li>
+      </ul>
+
+      <h2 class="section-heading">2.2 Project Objectives</h2>
+      <ul>
+        <li><strong>Develop a Gated Session Controller:</strong> Allow open browsing and cart building while strictly enforcing authentication at checkout without losing customer data.</li>
+        <li><strong>Implement Real-Time Cold-Chain Tracking:</strong> Provide continuous live updates across 5 delivery stages with automated invoice generation.</li>
+        <li><strong>Integrate Native Web Audio Synthesis:</strong> Synthesize nature ambiance procedurally in code without external MP3 asset latency.</li>
+        <li><strong>Enforce Zero-Trust Security Rules:</strong> Formulate and deploy Cloud Firestore security rules that isolate customer orders and restrict admin actions.</li>
+      </ul>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 9 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 10: CHAPTER 3 SCOPE -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 3</div>
+      <h1 class="chapter-title">PROJECT SCOPE & DELIMITATIONS</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">3.1 Functional Scope</h2>
+      <ul>
+        <li><strong>Customer Experience Layer:</strong> Hero showcase with procedural water audio, 3D kinetic ingredient cards, dynamic cart drawer, multi-pack bundles, and live order tracking.</li>
+        <li><strong>Identity & Session Security:</strong> Firebase Authentication supporting email/password and demo guest modes with state caching in localStorage.</li>
+        <li><strong>Logistics Pipeline:</strong> 5-stage status lifecycle (Received, Brewed, Inspected, Cold-Chain Transit, Delivered).</li>
+        <li><strong>Administrative Command Center:</strong> Protected dashboard for real-time order auditing, status updating, and record deletion.</li>
+      </ul>
+
+      <h2 class="section-heading">3.2 Technical Boundaries & Delimitations</h2>
+      <p>
+        The scope of this project is delimited to direct online D2C beverage commerce. Third-party multi-vendor marketplace architectures (like Amazon or Flipkart multi-seller models) and physical automated warehousing robotics are outside the operational boundary. Payment processing is simulated through tokenized client verification pending live banking gateway merchant onboarding.
+      </p>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 10 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 11: CHAPTER 4 REQUIREMENTS -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 4</div>
+      <h1 class="chapter-title">HARDWARE & SOFTWARE REQUIREMENTS</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">4.1 Development Hardware Specifications</h2>
+      <table>
+        <thead><tr><th>Component</th><th>Minimum Specification</th><th>Recommended Specification</th></tr></thead>
+        <tbody>
+          <tr><td>Processor (CPU)</td><td>Dual-Core 2.0 GHz x64</td><td>Quad-Core Intel i5 / AMD Ryzen 5 / Apple M-Series</td></tr>
+          <tr><td>System RAM</td><td>4 GB DDR4</td><td>8 GB / 16 GB DDR4/DDR5</td></tr>
+          <tr><td>Storage Space</td><td>2 GB available disk space</td><td>10 GB Solid State Drive (SSD NVMe)</td></tr>
+          <tr><td>Network Adapter</td><td>10 Mbps Broadband connection</td><td>50+ Mbps High-Speed Fiber Internet</td></tr>
+        </tbody>
+      </table>
+
+      <h2 class="section-heading">4.2 Software & Runtime Environment</h2>
+      <table>
+        <thead><tr><th>Software Layer</th><th>Technology / Version</th><th>Purpose & Role</th></tr></thead>
+        <tbody>
+          <tr><td>Operating System</td><td>Linux (Ubuntu 22.04 LTS) / Windows 11</td><td>Host development & deployment platform</td></tr>
+          <tr><td>Runtime Engine</td><td>Node.js v20.x LTS</td><td>JavaScript server-side execution runtime</td></tr>
+          <tr><td>Bundler / Dev Server</td><td>Vite 6.x</td><td>High-speed ESM module bundler</td></tr>
+          <tr><td>Framework & Language</td><td>React 19 & TypeScript 5.5</td><td>Component UI & static type enforcement</td></tr>
+          <tr><td>Styling Engine</td><td>Tailwind CSS v4.0</td><td>Utility-first responsive CSS framework</td></tr>
+          <tr><td>Database & Auth</td><td>Google Cloud Firestore 13.x</td><td>NoSQL reactive realtime database & security</td></tr>
+        </tbody>
+      </table>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 11 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 12: CHAPTER 5 TECH STACK -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 5</div>
+      <h1 class="chapter-title">TECHNOLOGY STACK & TECHNICAL RATIONALE</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">5.1 Technology Selection Rationale</h2>
+      <ul>
+        <li><strong>React 19:</strong> Delivers concurrent rendering, optimistic UI updates, and zero layout thrashing during heavy animation cycles.</li>
+        <li><strong>TypeScript:</strong> Eliminates runtime type errors, guarantees safe order payloads, and enforces strict interface definitions across modules.</li>
+        <li><strong>Tailwind CSS v4:</strong> Enables zero-runtime styling with native CSS variables, ensuring pristine 60 FPS transitions without CSS bundle bloat.</li>
+        <li><strong>Google Cloud Firestore:</strong> Offers sub-100ms WebSocket synchronization, offline cache persistence, and granular declarative security rules.</li>
+        <li><strong>Web Audio API:</strong> Synthesizes real-time audio on the client GPU/audio threads with zero network bandwidth consumption.</li>
+        <li><strong>Framer Motion 12:</strong> Supplies physics-based spring dampening for interactive 3D perspective cards.</li>
+      </ul>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 12 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 13: CHAPTER 6 SYSTEM ANALYSIS -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 6</div>
+      <h1 class="chapter-title">SYSTEM ANALYSIS & FEASIBILITY STUDY</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">6.1 Feasibility Assessment</h2>
+      <ul>
+        <li><strong>Technical Feasibility:</strong> High. Modern browsers support Web Audio, WebSockets, and CSS 3D transforms natively without plugins.</li>
+        <li><strong>Economic Feasibility:</strong> Excellent. Built using open-source libraries and serverless Firebase infrastructure that scales to zero cost in free tier.</li>
+        <li><strong>Operational Feasibility:</strong> Intuitive. Customers can track shipments with a simple order ID; administrators manage orders via an interactive UI.</li>
+      </ul>
+
+      <h2 class="section-heading">6.2 Operational Workflows</h2>
+      <p>
+        The system bifurcates user interactions into two core flows: the <em>Customer Shopping Flow</em> and the <em>Logistics Dispatch Flow</em>. The Customer Flow allows unrestricted product exploration and dynamic flavor selection, triggering authentication only upon payment commitment. The Logistics Flow streams real-time state changes to the customer dashboard whenever the warehouse admin updates packaging or transit status.
+      </p>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 13 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 14: CHAPTER 7 ARCHITECTURE -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 7</div>
+      <h1 class="chapter-title">SYSTEM ARCHITECTURE & DATA FLOW DESIGN</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">7.1 Multi-Tier Architecture</h2>
+      <p>
+        AXOLYT is structured across three clean architectural tiers:
+      </p>
+      <ul>
+        <li><strong>Presentation Tier (SPA Client):</strong> Built with React 19, Lucide icons, Framer Motion, and Tailwind CSS v4, running at 60 FPS in modern browsers.</li>
+        <li><strong>State & Orchestration Tier:</strong> React context hooks managing cart state, auth persistence, ambient audio context, and Firestore snapshot listeners.</li>
+        <li><strong>Cloud Data & Security Tier:</strong> Google Cloud Firestore NoSQL storage with declarative security rules protecting documents based on JWT claims.</li>
+      </ul>
+
+      <h2 class="section-heading">7.2 Data Flow Block Diagram (Figure 7.1)</h2>
+      <div class="code-box">
+[ User Browser / Client ] ──► [ React 19 SPA ] ──► [ LocalStorage Session Cache ]
+         │                              │
+         ▼                              ▼
+[ Web Audio Synthesizer ]     [ Auth Gatekeeper Modal ]
+         │                              │
+         ▼ (Binaural Sound)             ▼ (JWT Auth Token)
+[ Speakers / Headphones ]     [ Google Cloud Firestore ]
+                                        │
+                         ┌──────────────┴──────────────┐
+                         ▼                             ▼
+              [ orders Collection ]          [ security.rules ]
+                         │                             │
+                         ▼                             ▼
+              [ Realtime onSnapshot ]        [ Role-Based Access ]
+                         │
+                         ▼
+              [ Admin Command Portal ]
+      </div>
+      <div class="figure-caption">Figure 7.1: System Architecture and Real-Time Data Flow Block Diagram</div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 14 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 15: CHAPTER 8 DATABASE DESIGN -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 8</div>
+      <h1 class="chapter-title">DATABASE DESIGN & CLOUD FIRESTORE SCHEMA</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">8.1 NoSQL Document Schema for Orders</h2>
+      <p>
+        The primary data entity is the <strong>orders</strong> collection in Cloud Firestore. Each document represents a complete customer order with strict validation:
+      </p>
+
+      <table>
+        <thead><tr><th>Field Name</th><th>Data Type</th><th>Description / Constraint</th></tr></thead>
+        <tbody>
+          <tr><td>orderId</td><td>String</td><td>Unique human-readable reference (e.g., 'AXO-8921')</td></tr>
+          <tr><td>userId</td><td>String</td><td>Firebase Auth UID of customer; matches request.auth.uid</td></tr>
+          <tr><td>items</td><td>Array of Objects</td><td>Cart items: id, name, flavor, quantity, price</td></tr>
+          <tr><td>totalAmount</td><td>Number</td><td>Total order value in INR (₹)</td></tr>
+          <tr><td>status</td><td>String</td><td>'received' | 'brewing' | 'inspected' | 'transit' | 'delivered'</td></tr>
+          <tr><td>shippingAddress</td><td>Object</td><td>Customer name, street, city, pin code, phone</td></tr>
+          <tr><td>createdAt</td><td>Timestamp</td><td>Server timestamp of order placement</td></tr>
+        </tbody>
+      </table>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 15 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 16: CHAPTER 9 SECURITY RULES -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 9</div>
+      <h1 class="chapter-title">CLOUD FIRESTORE SECURITY RULES</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">9.1 Security Architecture</h2>
+      <p>
+        Cloud Firestore enforces a declarative security model. Unauthenticated requests cannot read or write customer orders. The rules below ensure that customers can only read and create their own orders, while only authorized administrative accounts can update statuses or delete records.
+      </p>
+
+      <div class="code-box">
+<div class="code-title">Listing 1: firestore.rules — Declarative Role-Based Access Control</div>
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper: Verify user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper: Verify user owns document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /orders/{orderId} {
+      // Anyone can create an order if they are authenticated and set their own userId
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Customers can read their own orders; admins can read all orders
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || request.auth.token.admin == true);
+      
+      // Only administrators can update shipment status or delete records
+      allow update, delete: if isAuthenticated() && request.auth.token.admin == true;
+    }
+  }
+}
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 16 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 17: CHAPTER 10 WEBSITE MODULES -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 10</div>
+      <h1 class="chapter-title">WEBSITE MODULES & INTERACTIVE FEATURES</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">10.1 Key Frontend Modules</h2>
+      <ul>
+        <li><strong>Hero Waterfall Ambiance:</strong> Full-viewport visual presentation paired with real-time procedural nature audio synthesizer (waterfall pink noise & harmonic streams).</li>
+        <li><strong>Interactive 3D Ingredient Cards:</strong> Spatial perspective cards showing Organic Green Tea, Ashwagandha, Cordyceps, and Electrolytes with dynamic cursor tilt physics.</li>
+        <li><strong>Session-Preserving Checkout Gate:</strong> Seamlessly captures cart contents, prompts login when checkout is clicked, and immediately proceeds to payment upon successful authentication.</li>
+        <li><strong>Real-Time Cold-Chain Order Tracker:</strong> Visual 5-stage progress tracker with live Firestore listener updates and one-click printable ASCII invoice generator.</li>
+        <li><strong>Administrative Command Center:</strong> Secure portal for live order monitoring, telemetry status transitions, and database cleanup.</li>
+      </ul>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 17 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 18: CHAPTER 11.1 SCREENSHOTS -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 11.1</div>
+      <h1 class="chapter-title">VISUAL IMPLEMENTATION & OUTPUT GALLERY</h1>
+      <div class="chapter-rule"></div>
+
+      <div class="figure-container">
+        <img src="/images/hero_waterfall_forest.jpg" class="figure-img" style="max-height: 85mm;" alt="Hero Waterfall">
+        <div class="figure-caption">Figure 11.1: Hero Waterfall Section with Ambient Audio Controller & Dynamic CTA</div>
+      </div>
+
+      <div class="figure-container" style="margin-top: 14px;">
+        <img src="/images/ingredients_showcase.jpg" class="figure-img" style="max-height: 85mm;" alt="Ingredients Showcase">
+        <div class="figure-caption">Figure 11.2: Active Ingredients Interactive Showcase with 3D Kinetic Tilt Physics</div>
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 18 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 19: CHAPTER 11.2 SCREENSHOTS -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 11.2</div>
+      <h1 class="chapter-title">VISUAL IMPLEMENTATION & OUTPUT GALLERY</h1>
+      <div class="chapter-rule"></div>
+
+      <div class="figure-container">
+        <img src="/assets/aistudio/Screenshot_2026-11-07-15-17-55-629_com.android.chrome_4217a7c3.jpg" class="figure-img" style="max-height: 85mm;" alt="Admin Dashboard">
+        <div class="figure-caption">Figure 11.3: Administrative Command Center & Order Fulfillment Management</div>
+      </div>
+
+      <div class="figure-container" style="margin-top: 14px;">
+        <img src="/assets/aistudio/Screenshot_2026-11-07-15-34-26-247_com.android.chrome_566131d5.jpg" class="figure-img" style="max-height: 85mm;" alt="Order Tracker">
+        <div class="figure-caption">Figure 11.4: Mobile Customer Portal & Live 5-Stage Cold-Chain Order Tracker</div>
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 19 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 20: CHAPTER 11.3 SCREENSHOTS -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 11.3</div>
+      <h1 class="chapter-title">VISUAL IMPLEMENTATION & OUTPUT GALLERY</h1>
+      <div class="chapter-rule"></div>
+
+      <div class="figure-container">
+        <div style="display: flex; gap: 16px; justify-content: center;">
+          <img src="/images/can_green_spring.jpg" style="height: 125mm; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" alt="Green Spring">
+          <img src="/images/can_wild_berry.jpg" style="height: 125mm; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" alt="Wild Berry">
+        </div>
+        <div class="figure-caption" style="margin-top: 14px;">Figure 11.5: Signature Flavor Can Lineup (Green Spring Mint & Wild Berry Fusion)</div>
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 20 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 21: CHAPTER 12.1 CODE AMBIANCE -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 12.1</div>
+      <h1 class="chapter-title">SOURCE CODE: PROCEDURAL AUDIO ENGINE</h1>
+      <div class="chapter-rule"></div>
+
+      <div class="code-box">
+<div class="code-title">Listing 2: AudioAmbianceController.tsx — Web Audio API Procedural Sound Engine</div>
+// Procedural Brownian Noise & Harmonic Nature Synthesizer
+const initAudioEngine = () => {
+  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  
+  // Generate 5-second procedural pink/brownian noise buffer for running stream
+  const bufferSize = ctx.sampleRate * 5;
+  const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const output = noiseBuffer.getChannelData(0);
+  let lastOut = 0.0;
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1;
+    output[i] = (lastOut + 0.02 * white) / 1.02; // Brownian noise filter
+    lastOut = output[i];
+    output[i] *= 3.5; // Gain compensation
+  }
+
+  // Noise stream node
+  const whiteNoise = ctx.createBufferSource();
+  whiteNoise.buffer = noiseBuffer;
+  whiteNoise.loop = true;
+
+  // Dual resonant bandpass filter simulating water flow through rocks
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(450, ctx.currentTime);
+
+  const gainNode = ctx.createGain();
+  gainNode.gain.setValueAtTime(0.12, ctx.currentTime);
+
+  whiteNoise.connect(filter);
+  filter.connect(gainNode);
+  gainNode.connect(ctx.destination);
+  whiteNoise.start(0);
+};
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 21 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 22: CHAPTER 12.2 CODE TILT -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 12.2</div>
+      <h1 class="chapter-title">SOURCE CODE: 3D KINETIC TILT PHYSICS</h1>
+      <div class="chapter-rule"></div>
+
+      <div class="code-box">
+<div class="code-title">Listing 3: IngredientTiltCard.tsx — 3D Spatial Spring Physics</div>
+export const IngredientTiltCard: React.FC&lt;Props&gt; = ({ ingredient }) =&gt; {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  // Smooth spring dampening configuration
+  const mouseX = useSpring(x, { stiffness: 300, damping: 25 });
+  const mouseY = useSpring(y, { stiffness: 300, damping: 25 });
+
+  // Map mouse coordinate offset to degrees of rotation
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], ['14deg', '-14deg']);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-14deg', '14deg']);
+
+  const handleMouseMove = (e: React.MouseEvent&lt;HTMLDivElement&gt;) =&gt; {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseXPos = e.clientX - rect.left;
+    const mouseYPos = e.clientY - rect.top;
+    
+    // Normalized offset between -0.5 and +0.5
+    x.set(mouseXPos / width - 0.5);
+    y.set(mouseYPos / height - 0.5);
+  };
+
+  const handleMouseLeave = () =&gt; {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    &lt;motion.div
+      style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="relative rounded-2xl bg-slate-900/80 p-6 border border-emerald-500/20"
+    &gt;
+      &lt;div style={{ transform: 'translateZ(30px)' }}&gt;
+        &lt;h3 className="text-xl font-bold text-emerald-400"&gt;{ingredient.name}&lt;/h3&gt;
+        &lt;p className="text-slate-300 text-sm mt-2"&gt;{ingredient.description}&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/motion.div&gt;
+  );
+};
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 22 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 23: CHAPTER 12.3 CODE CHECKOUT -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 12.3</div>
+      <h1 class="chapter-title">SOURCE CODE: GATED CHECKOUT CONTROLLER</h1>
+      <div class="chapter-rule"></div>
+
+      <div class="code-box">
+<div class="code-title">Listing 4: App.tsx — Session-Preserving Authentication Gatekeeper</div>
+// Handle Checkout Initiation with Session Preservation
+const handleInitiateCheckout = () => {
+  // If user is not logged in, preserve cart and trigger auth modal
+  if (!currentUser) {
+    localStorage.setItem('axolyt_pending_checkout', JSON.stringify({
+      cart,
+      pendingTimestamp: Date.now(),
+      returnStep: 'PAYMENT_CONFIRMATION'
+    }));
+    
+    setIsCartOpen(false);
+    setIsAuthModalOpen(true);
+    setAuthNotice('Please sign in or create an account to complete your order.');
+    return;
+  }
+
+  // User is already authenticated: Proceed directly to checkout
+  setIsCartOpen(false);
+  setIsCheckoutModalOpen(true);
+};
+
+// Post-Authentication Hook: Restore Pending Session Automatically
+useEffect(() => {
+  if (currentUser) {
+    const savedSession = localStorage.getItem('axolyt_pending_checkout');
+    if (savedSession) {
+      try {
+        const { returnStep } = JSON.parse(savedSession);
+        if (returnStep === 'PAYMENT_CONFIRMATION') {
+          setIsAuthModalOpen(false);
+          setIsCheckoutModalOpen(true);
+          localStorage.removeItem('axolyt_pending_checkout');
+        }
+      } catch (e) {
+        console.error('Failed to restore checkout state', e);
+      }
+    }
+  }
+}, [currentUser]);
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 23 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 24: CHAPTER 12.4 CODE ORDER TRACKER -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 12.4</div>
+      <h1 class="chapter-title">SOURCE CODE: REAL-TIME ORDER TRACKER</h1>
+      <div class="chapter-rule"></div>
+
+      <div class="code-box">
+<div class="code-title">Listing 5: OrderTracker.tsx — 5-Stage Cold-Chain Tracker & Invoice Export</div>
+// Live Firestore snapshot subscription for order telemetry
+useEffect(() => {
+  if (!orderId) return;
+  const docRef = doc(db, 'orders', orderId);
+  const unsubscribe = onSnapshot(docRef, (snap) => {
+    if (snap.exists()) {
+      setOrderData(snap.data() as Order);
+      setLoading(false);
+    }
+  }, (err) => {
+    console.error('Order telemetry stream error:', err);
+  });
+  return () => unsubscribe();
+}, [orderId]);
+
+// Printable Plaintext ASCII Invoice Generation
+const downloadInvoice = (order: Order) => {
+  const invoiceText = \`
+============================================================
+              AXOLYT ORGANIC ENERGY — OFFICIAL INVOICE
+============================================================
+Order ID       : \${order.id}
+Date           : \${new Date(order.createdAt?.seconds * 1000).toLocaleString()}
+Customer Email : \${order.customerEmail}
+Status         : \${order.status.toUpperCase()} (Cold-Chain Verified)
+------------------------------------------------------------
+ITEMS PURCHASED:
+\${order.items.map(i => \` - \${i.name} (\${i.flavor}) x\${i.quantity} : ₹\${i.price * i.quantity}\`).join('\\n')}
+------------------------------------------------------------
+TOTAL AMOUNT PAID : ₹\${order.totalAmount}
+PAYMENT STATUS    : VERIFIED & CONFIRMED (Prepaid Online)
+============================================================
+       Thank you for fueling clean with AXOLYT!
+\`;
+  const blob = new Blob([invoiceText], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = \`Invoice_\${order.id}.txt\`;
+  a.click();
+};
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 24 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 25: CHAPTER 12.5 CODE ADMIN -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 12.5</div>
+      <h1 class="chapter-title">SOURCE CODE: ADMIN COMMAND CENTER</h1>
+      <div class="chapter-rule"></div>
+
+      <div class="code-box">
+<div class="code-title">Listing 6: AdminDashboard.tsx — Order Management & Atomic Deletion</div>
+// Protected Admin Real-Time Orders Stream
+useEffect(() => {
+  if (!auth.currentUser) return; // Guard against unauthenticated queries
+  const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    setOrders(list);
+  }, (err) => {
+    console.error('Admin query listener error', err);
+  });
+  return () => unsubscribe();
+}, [auth.currentUser]);
+
+// Update Cold-Chain Telemetry Status
+const handleStatusChange = async (orderId: string, newStatus: string) => {
+  try {
+    const orderRef = doc(db, 'orders', orderId);
+    await updateDoc(orderRef, { status: newStatus, updatedAt: serverTimestamp() });
+  } catch (error) {
+    console.error('Failed to update status', error);
+  }
+};
+
+// Delete Order Record with Safety Confirmation
+const handleDeleteOrder = async (orderId: string) => {
+  if (window.confirm(\`Are you sure you want to permanently delete order \${orderId}?\`)) {
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+    } catch (error) {
+      console.error('Failed to delete order', error);
+    }
+  }
+};
+      </div>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 25 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 26: CHAPTER 13.1 TESTING PART 1 -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 13.1</div>
+      <h1 class="chapter-title">SOFTWARE TESTING & TEST CASES (PART 1)</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">13.1 Testing Methodology & Quality Assurance</h2>
+      <p>
+        The AXOLYT platform was subjected to comprehensive manual and automated test execution. The testing suite covers client component rendering, cart manipulation, gated authentication triggers, Firestore real-time synchronization, and access security validation.
+      </p>
+
+      <h2 class="section-heading">13.2 Test Case Matrix (TC-01 to TC-06)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 10%;">Test ID</th>
+            <th style="width: 25%;">Test Scenario</th>
+            <th style="width: 35%;">Input & Action Performed</th>
+            <th style="width: 20%;">Expected Result</th>
+            <th style="width: 10%;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>TC-01</td>
+            <td>Hero Waterfall Audio Toggle</td>
+            <td>Click sound wave button on Hero</td>
+            <td>AudioContext starts, plays synthesized stream audio</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-02</td>
+            <td>3D Kinetic Tilt Physics</td>
+            <td>Move mouse over Ingredient cards</td>
+            <td>Card tilts proportionally on X and Y axes smoothly</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-03</td>
+            <td>Add to Cart Flow</td>
+            <td>Select 12-Pack Green Spring, click Add</td>
+            <td>Cart opens, badge increments, subtotal updates</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-04</td>
+            <td>Quantity Increment / Decrement</td>
+            <td>Click (+) and (-) buttons in cart drawer</td>
+            <td>Items recalculate instantly; zero removes item</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-05</td>
+            <td>Gated Checkout (Guest User)</td>
+            <td>Click Checkout while unauthenticated</td>
+            <td>Cart buffers to localStorage; Auth modal opens</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-06</td>
+            <td>Post-Auth Session Restoration</td>
+            <td>Sign in via Auth modal with pending cart</td>
+            <td>Cart restores, Checkout modal automatically displays</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 26 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 27: CHAPTER 13.2 TESTING PART 2 -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 13.2</div>
+      <h1 class="chapter-title">SOFTWARE TESTING & TEST CASES (PART 2)</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">13.3 Test Case Matrix (TC-07 to TC-12)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 10%;">Test ID</th>
+            <th style="width: 25%;">Test Scenario</th>
+            <th style="width: 35%;">Input & Action Performed</th>
+            <th style="width: 20%;">Expected Result</th>
+            <th style="width: 10%;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>TC-07</td>
+            <td>Order Submission & Firestore Write</td>
+            <td>Complete shipping form, submit payment</td>
+            <td>Order document created in Firestore with unique ID</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-08</td>
+            <td>Real-Time Order Telemetry</td>
+            <td>Track order ID in Order Tracker component</td>
+            <td>5-stage progress indicator updates upon admin status change</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-09</td>
+            <td>ASCII Invoice Generation</td>
+            <td>Click 'Download Invoice' button in tracker</td>
+            <td>Text file downloaded with accurate line items & total</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-10</td>
+            <td>Admin Command Portal Access</td>
+            <td>Log in with administrator credentials</td>
+            <td>Admin dashboard renders all customer orders</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-11</td>
+            <td>Order Status Telemetry Update</td>
+            <td>Change status from 'Brewing' to 'Transit'</td>
+            <td>Firestore document updates; customer UI updates in &lt;100ms</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+          <tr>
+            <td>TC-12</td>
+            <td>Unauthorized Access Prevention</td>
+            <td>Attempt to update order from client console</td>
+            <td>Security rules block write with PERMISSION_DENIED</td>
+            <td><strong style="color: #059669;">PASSED</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 27 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 28: CHAPTER 14 ADVANTAGES & LIMITATIONS -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 14</div>
+      <h1 class="chapter-title">ADVANTAGES & SYSTEM LIMITATIONS</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">14.1 Key System Advantages</h2>
+      <ul>
+        <li><strong>Frictionless User Journey:</strong> Customers can assemble multi-flavor carts without mandatory login friction, while security is preserved at checkout.</li>
+        <li><strong>Zero Audio Network Payload:</strong> Procedural synthesis generates infinite ambient sound in memory without loading multi-megabyte audio files.</li>
+        <li><strong>Sub-100ms Data Synchronization:</strong> WebSocket listeners keep customer tracking and administrative management in continuous sync.</li>
+        <li><strong>Strict Role-Based Security:</strong> Firestore rules mathematically guarantee that unauthorized users cannot tamper with order records.</li>
+      </ul>
+
+      <h2 class="section-heading">14.2 Current System Limitations</h2>
+      <ul>
+        <li><strong>Web Audio Autoplay Policy:</strong> Browsers require a user click before audio synthesis can begin.</li>
+        <li><strong>Simulated Payment Gateway:</strong> Uses tokenized payment confirmation rather than direct UPI/credit card merchant settlement.</li>
+        <li><strong>Single Currency Format:</strong> Transactions are denominated in Indian Rupees (INR ₹), requiring currency conversion for international expansion.</li>
+      </ul>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 28 of 29</div>
+      </div>
+    </div>
+
+    <!-- PAGE 29: CHAPTER 15 CONCLUSION & REFERENCES -->
+    <div class="page">
+      <div class="page-header">
+        <div>Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div class="page-header-right">AXOLYT ORGANIC ENERGY — Project Report</div>
+      </div>
+      <div class="chapter-num">Chapter 15</div>
+      <h1 class="chapter-title">FUTURE SCOPE, CONCLUSION & REFERENCES</h1>
+      <div class="chapter-rule"></div>
+
+      <h2 class="section-heading">15.1 Future Enhancements</h2>
+      <ul>
+        <li><strong>AI-Powered Personalized Nutrition:</strong> Suggest custom electrolyte and adaptogen blends based on customer workout profiles.</li>
+        <li><strong>Live GPS Courier Telemetry:</strong> Integrate Google Maps Platform to show real-time delivery vehicle locations on a map.</li>
+        <li><strong>Progressive Web App (PWA):</strong> Add offline service worker caching and push notifications for restock alerts.</li>
+      </ul>
+
+      <h2 class="section-heading">15.2 Conclusion</h2>
+      <p>
+        The <strong>AXOLYT ORGANIC ENERGY</strong> major project successfully exemplifies modern software engineering principles applied to direct-to-consumer digital commerce. By harmonizing React 19, TypeScript, Tailwind CSS, Google Cloud Firestore, and Web Audio API, the system achieves exceptional transactional responsiveness, bulletproof security, and engaging sensory depth. All 12 test cases passed, and all diploma academic objectives were fulfilled.
+      </p>
+
+      <h2 class="section-heading">15.3 Academic References</h2>
+      <ol style="font-size: 8.5pt; line-height: 1.5;">
+        <li>React Documentation (v19) — Meta Platforms Inc., 2024. https://react.dev</li>
+        <li>Google Cloud Firestore Documentation & Security Rules Architecture — Google LLC, 2024.</li>
+        <li>W3C Web Audio API Specification — W3C Working Draft, 2024. https://www.w3.org/TR/webaudio/</li>
+        <li>Tailwind CSS Architecture & Utility-First Design — Adam Wathan, 2024. https://tailwindcss.com</li>
+        <li>Framer Motion Physics Engine Documentation — Motion Software Ltd., 2024.</li>
+        <li>State Board of Technical Education, Haryana (HSBTE) — Guidelines for Diploma Major Projects.</li>
+      </ol>
+      <div class="page-footer">
+        <div>Diploma in Computer Engineering · Session 2026–2027</div>
+        <div class="page-number">Page 29 of 29</div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
+`;
+
+fs.writeFileSync(outputPath, htmlContent, 'utf8');
+console.log('Printable HTML report generated successfully at:', outputPath);

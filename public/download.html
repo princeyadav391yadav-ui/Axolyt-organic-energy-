@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download Project Report — AXOLYT ORGANIC ENERGY</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: #040d07;
+      color: #E2E8F0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 680px;
+      width: 100%;
+    }
+    .card {
+      background: rgba(11, 27, 17, 0.98);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: 20px;
+      padding: 28px 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 40px rgba(16, 185, 129, 0.1);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #34D399;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #94A3B8;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .student-box {
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: left;
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: #CBD5E1;
+      margin-bottom: 20px;
+    }
+    .student-box strong {
+      color: #34D399;
+    }
+
+    .notice-box {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: #FCD34D;
+      text-align: left;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .btn-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-pdf {
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: #022C22;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+    .btn-pdf:hover {
+      background: linear-gradient(135deg, #34D399, #10B981);
+    }
+
+    .btn-share {
+      background: #2563EB;
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    }
+    .btn-share:hover {
+      background: #3B82F6;
+    }
+
+    .btn-print {
+      background: #7C3AED;
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+    }
+    .btn-print:hover {
+      background: #8B5CF6;
+    }
+
+    .btn-docx {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6EE7B7;
+    }
+    .btn-docx:hover {
+      background: rgba(16, 185, 129, 0.22);
+    }
+
+    .btn-copy {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #F1F5F9;
+      font-size: 13px;
+    }
+    .btn-copy:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .status {
+      font-size: 12px;
+      margin-top: 14px;
+      color: #34D399;
+      min-height: 20px;
+      font-weight: 600;
+    }
+
+    .preview-section {
+      background: rgba(11, 27, 17, 0.95);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+    }
+    .preview-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #34D399;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    iframe.pdf-frame {
+      width: 100%;
+      height: 520px;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      background: #1e293b;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 18px;
+      color: #10B981;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="badge">College Major Project Report</div>
+      <h1>AXOLYT ORGANIC ENERGY</h1>
+      <p class="subtitle">Complete 29-Page Academic Submission (Code + Output Screenshots)</p>
+
+      <div class="student-box">
+        <div><strong>Student Name:</strong> Prince Kumar</div>
+        <div><strong>Roll Number:</strong> 240790825012</div>
+        <div><strong>College:</strong> Ch. Bansi Lal Polytechnic, Bhiwani</div>
+        <div><strong>Department:</strong> Department of Computer Engineering</div>
+        <div><strong>Project Guide:</strong> Ms. Pratibha Dhaiya</div>
+        <div><strong>Session:</strong> 2026–2027 · <strong>Page Count:</strong> Exactly 29 A4 Pages</div>
+      </div>
+
+      <div class="notice-box">
+        💡 <strong>Agar app preview me direct download na ho rha ho:</strong><br>
+        Browser iframe restrictions ki wajah se preview window me file download block ho sakti hai. 
+        Neeche diye gaye <strong>"Save / Share to Device"</strong> ya <strong>"Copy Link"</strong> button se direct Chrome me open karein!
+      </div>
+
+      <div class="btn-grid">
+        <!-- 1. Native Mobile Share / Save to Drive or Files -->
+        <button class="btn btn-share" id="btn-share" onclick="sharePdf()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+          <span>Save to Files / Share on WhatsApp / Drive</span>
+        </button>
+
+        <!-- 2. Web Report + 1-Click Print to PDF -->
+        <a class="btn btn-print" href="/report.html" target="_blank">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>Open Printable Web Report (Print to PDF)</span>
+        </a>
+
+        <!-- 3. Direct PDF Download -->
+        <button class="btn btn-pdf" onclick="triggerDirectDownload('/download/pdf', 'AXOLYT_ORGANIC_ENERGY_Project_Report.pdf', 'PDF')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>Direct Download PDF (29 Pages)</span>
+        </button>
+
+        <!-- 4. Direct DOCX Download -->
+        <button class="btn btn-docx" onclick="triggerDirectDownload('/download/docx', 'AXOLYT_ORGANIC_ENERGY_Project_Report.docx', 'Word DOCX')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+          <span>Download Word Document (.DOCX)</span>
+        </button>
+
+        <!-- 5. Copy Direct URL to Clipboard -->
+        <button class="btn btn-copy" onclick="copyDirectLink()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy Direct PDF Link (To paste in Chrome)</span>
+        </button>
+      </div>
+
+      <div class="status" id="status-msg"></div>
+
+      <a href="/" class="back-link">← Return to AXOLYT Store</a>
+    </div>
+
+    <!-- Live In-Browser PDF Reader -->
+    <div class="preview-section">
+      <div class="preview-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        <span>Live Report Preview (Read All 29 Pages Below)</span>
+      </div>
+      <iframe class="pdf-frame" src="/reports/AXOLYT_ORGANIC_ENERGY_Project_Report.pdf#toolbar=1" title="AXOLYT Project Report PDF Preview"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status-msg');
+
+    // 1. Direct Download with Blob & Fallback
+    async function triggerDirectDownload(url, filename, type) {
+      statusEl.textContent = 'Preparing ' + type + '... Please wait.';
+      statusEl.style.color = '#34D399';
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Fetch failed: ' + response.statusText);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(() => {
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(blobUrl);
+          statusEl.textContent = '✓ ' + type + ' download triggered! Check your downloads folder.';
+        }, 1000);
+      } catch (err) {
+        console.warn('Blob download intercepted, opening directly:', err);
+        window.open(url, '_blank');
+        statusEl.textContent = '✓ Opened download in new tab.';
+      }
+    }
+
+    // 2. Share PDF via Web Share API (Ideal for mobile phones!)
+    async function sharePdf() {
+      statusEl.textContent = 'Fetching PDF to save/share...';
+      try {
+        const response = await fetch('/reports/AXOLYT_ORGANIC_ENERGY_Project_Report.pdf');
+        const blob = await response.blob();
+        const file = new File([blob], 'AXOLYT_ORGANIC_ENERGY_Project_Report.pdf', { type: 'application/pdf' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'AXOLYT ORGANIC ENERGY — Project Report',
+            text: 'College Project Report by Prince Kumar (Roll No. 240790825012)',
+            files: [file]
+          });
+          statusEl.textContent = '✓ Shared successfully!';
+        } else {
+          // Fallback if files sharing not supported
+          triggerDirectDownload('/download/pdf', 'AXOLYT_ORGANIC_ENERGY_Project_Report.pdf', 'PDF');
+        }
+      } catch (err) {
+        console.error('Share error:', err);
+        statusEl.textContent = 'Redirecting to direct PDF download...';
+        window.open('/reports/AXOLYT_ORGANIC_ENERGY_Project_Report.pdf', '_blank');
+      }
+    }
+
+    // 3. Copy Direct Link to Clipboard
+    function copyDirectLink() {
+      const fullUrl = window.location.origin + '/download/pdf';
+      navigator.clipboard.writeText(fullUrl).then(() => {
+        statusEl.textContent = '✓ Link copied to clipboard! Chrome me new tab khol kar paste karein: ' + fullUrl;
+      }).catch(() => {
+        statusEl.textContent = 'Link: ' + fullUrl;
+      });
+    }
+  </script>
+</body>
+</html>

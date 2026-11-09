@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, User, Search, Menu, X, Sparkles, Check, ShieldCheck, GraduationCap } from 'lucide-react';
+import { ShoppingBag, User, Search, Menu, X, Sparkles, Check, ShieldCheck } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface NavbarProps {
@@ -9,7 +9,6 @@ interface NavbarProps {
   onOpenSearch: () => void;
   onOpenStory: () => void;
   onOpenAdmin: () => void;
-  onOpenReport?: () => void;
   user: UserProfile;
 }
 
@@ -20,7 +19,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSearch,
   onOpenStory,
   onOpenAdmin,
-  onOpenReport,
   user,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -154,20 +152,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Search className="w-5 h-5 group-hover:rotate-12 transition-transform duration-200" />
               </button>
 
-              {/* College Project Report Button */}
-              {onOpenReport && (
-                <button
-                  onClick={onOpenReport}
-                  aria-label="College Project Report"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-emerald-900/60 to-teal-900/60 hover:from-emerald-800/80 hover:to-teal-800/80 text-emerald-300 border border-emerald-500/40 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-105 active:scale-95 transition-all duration-200 group"
-                  title="College Project Report (29 Pages PDF & DOCX)"
-                >
-                  <GraduationCap className="w-4 h-4 text-emerald-400 group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-200" />
-                  <span className="hidden lg:inline">Report</span>
-                  <span className="hidden sm:inline px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-400/20 text-emerald-300">29p</span>
-                </button>
-              )}
-
               {/* Admin Dashboard Button */}
               <button
                 onClick={onOpenAdmin}
@@ -251,23 +235,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             <div className="pt-4 border-t border-emerald-500/20 flex flex-col gap-2">
-              {onOpenReport && (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenReport();
-                  }}
-                  className="w-full flex items-center justify-between py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-900/60 to-teal-900/60 border border-emerald-500/40 text-emerald-200 text-sm font-semibold shadow-sm hover:text-white"
-                >
-                  <span className="flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4 text-emerald-400" />
-                    <span>College Project Report</span>
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
-                    29 Pages PDF / DOCX
-                  </span>
-                </button>
-              )}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

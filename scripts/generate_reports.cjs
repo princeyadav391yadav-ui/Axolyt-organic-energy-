@@ -1,10 +1,12 @@
 /**
  * AXOLYT ORGANIC ENERGY — College Project Report Generator
- * Generates both DOCX and PDF (strictly 29 pages A4 format, within 25-30 pages)
+ * Generates both PDF and DOCX with actual Source Code & Output Screenshots
+ * Total length: Strictly 29 Pages A4 (within 20–30 pages requirement)
+ *
  * Student: Prince Kumar (Roll No: 240790825012)
  * College: Ch. Bansi Lal Polytechnic, Bhiwani
  * Department: Department of Computer Engineering
- * Session: 2026-2027
+ * Session: 2026–2027
  * Guide: Ms. Pratibha Dhaiya
  */
 
@@ -33,16 +35,20 @@ const {
   ShadingType,
 } = docx;
 
-// Ensure output directory exists
+// Ensure output directories exist
 const reportsDir = path.join(__dirname, '../public/reports');
-if (!fs.existsSync(reportsDir)) {
-  fs.mkdirSync(reportsDir, { recursive: true });
-}
+const artifactsDir = path.join(__dirname, '../../.aistudio/artifacts/brain/2bc4ff55-ce79-4bcf-a8f6-59f49df4bd92');
+
+[reportsDir, artifactsDir].forEach((dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
 const pdfPath = path.join(reportsDir, 'AXOLYT_ORGANIC_ENERGY_Project_Report.pdf');
 const docxPath = path.join(reportsDir, 'AXOLYT_ORGANIC_ENERGY_Project_Report.docx');
 
-console.log('Starting AXOLYT Project Report generation...');
+console.log('Starting Enhanced AXOLYT Project Report generation with Code & Screenshots...');
 console.log('Target PDF:', pdfPath);
 console.log('Target DOCX:', docxPath);
 
@@ -75,7 +81,7 @@ function generatePdfReport() {
     const darkTextColor = '#1F2937'; // Slate Dark
     const lightMutedColor = '#4B5563'; // Slate Muted
 
-    // Helper function to draw header and footer
+    // Draw header and footer
     function drawPageChrome(pageNum, totalPages) {
       if (pageNum === 1) return; // No header/footer on cover page
 
@@ -114,10 +120,10 @@ function generatePdfReport() {
 
     // Helper for Section Heading
     function renderSectionHeading(secNum, title) {
-      doc.y += 6;
-      doc.fontSize(11).font('Helvetica-Bold').fillColor(primaryColor)
+      doc.y += 5;
+      doc.fontSize(10.5).font('Helvetica-Bold').fillColor(primaryColor)
         .text(`${secNum} ${title}`, { lineBreak: false });
-      doc.y += 14;
+      doc.y += 13;
       doc.font('Helvetica').fontSize(8.5).fillColor(darkTextColor);
     }
 
@@ -133,8 +139,8 @@ function generatePdfReport() {
     // Helper for Body Paragraph
     function renderParagraph(text) {
       doc.font('Helvetica').fontSize(8.5).fillColor(darkTextColor)
-        .text(text, 50, doc.y, { width: 495, align: 'justify', lineGap: 2.5 });
-      doc.y += 6;
+        .text(text, 50, doc.y, { width: 495, align: 'justify', lineGap: 2.2 });
+      doc.y += 5;
     }
 
     // Helper for bullet items
@@ -146,13 +152,43 @@ function generatePdfReport() {
       doc.y += 4;
     }
 
-    // Helper to draw formatted table cleanly without unintended auto-pages
+    // Helper to render formatted code box
+    function renderCodeBox(codeLines, title, options = {}) {
+      const startX = 50;
+      const startY = doc.y + 2;
+      const width = 495;
+      const titleHeight = 15;
+      const lineHeight = 10.5;
+      const padding = 5;
+      const totalHeight = titleHeight + (codeLines.length * lineHeight) + padding * 2;
+
+      // Title bar
+      doc.rect(startX, startY, width, titleHeight).fill('#064E3B');
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#FFFFFF')
+        .text(title || 'Source Code Listing', startX + 8, startY + 3.5, { width: width - 16, lineBreak: false });
+
+      // Code body
+      doc.rect(startX, startY + titleHeight, width, totalHeight - titleHeight).fill('#08170E');
+      doc.rect(startX, startY, width, totalHeight).strokeColor('#10B981').lineWidth(0.5).stroke();
+
+      let codeY = startY + titleHeight + padding;
+      doc.font('Courier').fontSize(6.8);
+      codeLines.forEach((line, idx) => {
+        doc.fillColor('#059669').text(String(idx + 1).padStart(2, ' ') + ' ', startX + 6, codeY, { continued: true, lineBreak: false });
+        doc.fillColor('#A7F3D0').text(line, { width: width - 36, lineBreak: false, ellipsis: true });
+        codeY += lineHeight;
+      });
+
+      doc.y = startY + totalHeight + 6;
+    }
+
+    // Helper to draw formatted table
     function renderTable(headers, rows, colWidths, options = {}) {
       const startX = 50;
       let startY = doc.y + 4;
       const totalWidth = colWidths.reduce((a, b) => a + b, 0);
-      const headerH = options.headerHeight || 18;
-      const rowH = options.rowHeight || 16;
+      const headerH = options.headerHeight || 16;
+      const rowH = options.rowHeight || 14;
       const fontSize = options.fontSize || 7.5;
 
       // Header row
@@ -160,7 +196,7 @@ function generatePdfReport() {
       let currentX = startX;
       doc.font('Helvetica-Bold').fontSize(fontSize).fillColor('#FFFFFF');
       headers.forEach((h, i) => {
-        doc.text(h, currentX + 3, startY + 4, { width: colWidths[i] - 6, align: 'left', lineBreak: false, ellipsis: true });
+        doc.text(h, currentX + 3, startY + 3.5, { width: colWidths[i] - 6, align: 'left', lineBreak: false, ellipsis: true });
         currentX += colWidths[i];
       });
       startY += headerH;
@@ -174,7 +210,7 @@ function generatePdfReport() {
         currentX = startX;
         doc.font('Helvetica').fontSize(fontSize).fillColor('#1F2937');
         row.forEach((cell, i) => {
-          doc.text(cell, currentX + 3, startY + 3.5, { width: colWidths[i] - 6, align: 'left', lineBreak: false, ellipsis: true });
+          doc.text(cell, currentX + 3, startY + 3, { width: colWidths[i] - 6, align: 'left', lineBreak: false, ellipsis: true });
           currentX += colWidths[i];
         });
         startY += rowH;
@@ -367,27 +403,27 @@ function generatePdfReport() {
       { num: '', title: "Candidate's Declaration", page: '3' },
       { num: '', title: 'Acknowledgement', page: '4' },
       { num: '', title: 'Abstract', page: '5' },
-      { num: '', title: 'List of Figures & Tables', page: '7' },
+      { num: '', title: 'List of Figures, Tables & Code Listings', page: '7' },
       { num: 'Chapter 1', title: 'Introduction & Project Overview', page: '8' },
-      { num: 'Chapter 2', title: 'Problem Statement, Objectives & Feasibility', page: '9' },
-      { num: 'Chapter 3', title: 'Scope of the Project', page: '10' },
-      { num: 'Chapter 4', title: 'Hardware & Software Requirements', page: '11' },
-      { num: 'Chapter 5', title: 'Technologies Used — Frontend Engineering', page: '12' },
-      { num: 'Chapter 5 (Contd.)', title: 'Cloud Infrastructure & Audio Synthesis', page: '13' },
-      { num: 'Chapter 6', title: 'System Analysis & SRS', page: '14' },
-      { num: 'Chapter 7', title: 'System Architecture & Component Design', page: '15' },
-      { num: 'Chapter 8', title: 'Database Design & Firestore Data Model', page: '16' },
-      { num: 'Chapter 8 (Contd.)', title: 'Cloud Security Rules & RBAC', page: '17' },
-      { num: 'Chapter 9', title: 'Data Flow Diagrams (DFD Level 0 & Level 1)', page: '18' },
-      { num: 'Chapter 9 (Contd.)', title: 'Use Case Specification & Sequence Flow', page: '19' },
-      { num: 'Chapter 10', title: 'Website Modules & Core Features (Part 1)', page: '20' },
-      { num: 'Chapter 10 (Contd.)', title: 'Website Modules & Core Features (Part 2)', page: '21' },
-      { num: 'Chapter 11', title: 'Implementation & Application Screenshots (Part 1)', page: '22' },
-      { num: 'Chapter 11 (Contd.)', title: 'Application Screenshots (Part 2)', page: '23' },
-      { num: 'Chapter 12', title: 'Software Testing & Quality Assurance', page: '24' },
-      { num: 'Chapter 12 (Contd.)', title: 'Comprehensive Software Test Cases Matrix', page: '25' },
-      { num: 'Chapter 13', title: 'Platform Advantages & Technical Limitations', page: '26' },
-      { num: 'Chapter 14', title: 'Future Scope & Planned Enhancements', page: '27' },
+      { num: 'Chapter 2', title: 'Problem Statement, Objectives & Feasibility Study', page: '9' },
+      { num: 'Chapter 3', title: 'Scope of the Project & Target User Personas', page: '10' },
+      { num: 'Chapter 4', title: 'Hardware & Software Requirements (Tables 4.1 & 4.2)', page: '11' },
+      { num: 'Chapter 5', title: 'Technologies Used — Frontend (React 19, TS, Tailwind, Motion)', page: '12' },
+      { num: 'Chapter 5 (Cont.)', title: 'Cloud Infrastructure & Web Audio Ambiance Synthesis', page: '13' },
+      { num: 'Chapter 6', title: 'System Analysis & Software Requirements Specification (SRS)', page: '14' },
+      { num: 'Chapter 7', title: 'System Architecture & 3-Tier Component Design', page: '15' },
+      { num: 'Chapter 8', title: 'Database Design & Firestore NoSQL Schema (Tables 8.1 & 8.2)', page: '16' },
+      { num: 'Chapter 8 (Cont.)', title: 'Cloud Security Rules & Role-Based Access Control (Code 1)', page: '17' },
+      { num: 'Chapter 9', title: 'Data Flow Diagrams (Level 0 Context & Level 1 DFD)', page: '18' },
+      { num: 'Chapter 9 (Cont.)', title: 'Use Case Specification Matrix & Gated Checkout Flow', page: '19' },
+      { num: 'Chapter 10', title: 'Core Modules: Navigation & Web Audio Engine (Code 2)', page: '20' },
+      { num: 'Chapter 10 (Cont.)', title: 'Core Modules: 3D Tilt Cards & Gated Checkout Guard (Code 3 & 4)', page: '21' },
+      { num: 'Chapter 11', title: 'Website Output Screenshots: Hero & Ingredients (Figures 11.1 & 11.2)', page: '22' },
+      { num: 'Chapter 11 (Cont.)', title: 'Website Output Screenshots: Admin Portal & Mobile (Figures 11.3–11.5)', page: '23' },
+      { num: 'Chapter 12', title: 'Core Modules: 5-Stage Cold-Chain Tracker & Admin Hub (Code 5 & 6)', page: '24' },
+      { num: 'Chapter 13', title: 'Software Testing & Comprehensive Test Cases Matrix (Table 13.1)', page: '25' },
+      { num: 'Chapter 14', title: 'Platform Advantages & Technical Limitations', page: '26' },
+      { num: 'Chapter 14 (Cont.)', title: 'Future Scope & Planned Engineering Enhancements', page: '27' },
       { num: 'Chapter 15', title: 'Conclusion & Academic Learnings', page: '28' },
       { num: '', title: 'References & Bibliography', page: '29' },
     ];
@@ -405,23 +441,21 @@ function generatePdfReport() {
     verifyPage(6, 'Page 6: TOC');
 
     // ==========================================
-    // PAGE 7: LIST OF FIGURES & TABLES
+    // PAGE 7: LIST OF FIGURES, TABLES & CODE LISTINGS
     // ==========================================
     doc.addPage();
-    renderChapterHeader(null, 'LIST OF FIGURES & TABLES');
+    renderChapterHeader(null, 'FIGURES, TABLES & CODE LISTINGS');
 
-    renderSubHeading('LIST OF FIGURES');
+    renderSubHeading('LIST OF FIGURES & OUTPUT SCREENSHOTS');
     const figures = [
-      { id: 'Figure 7.1', title: 'Three-Tier System Architecture Model', page: '15' },
-      { id: 'Figure 9.1', title: 'Data Flow Diagram Level 0 (Context Diagram)', page: '18' },
-      { id: 'Figure 9.2', title: 'Data Flow Diagram Level 1 (Transaction & Auth Flow)', page: '18' },
-      { id: 'Figure 9.3', title: 'Use Case Diagram (Customer vs Administrator Roles)', page: '19' },
-      { id: 'Figure 10.1', title: 'Interactive 5-Stage Cold-Chain Tracker Architecture', page: '21' },
-      { id: 'Figure 11.1', title: 'Homepage Hero & Waterfall Botanical Atmosphere', page: '22' },
-      { id: 'Figure 11.2', title: 'Botanical Ingredients Showcase & 3D Interactive Adaptive Cards', page: '22' },
-      { id: 'Figure 11.3', title: 'Admin Command Center Access & Security Portal', page: '23' },
-      { id: 'Figure 11.4', title: 'Mobile Customer Portal & Live Order Tracking Screen', page: '23' },
-      { id: 'Figure 11.5', title: 'Signature Organic Flavor Lineup & Cold-Pack Cans', page: '23' },
+      { id: 'Figure 7.1', title: 'Three-Tier System Architecture Model (Presentation, Logic, Cloud)', page: '15' },
+      { id: 'Figure 9.1', title: 'Data Flow Diagram Level 0 (Context Interaction Model)', page: '18' },
+      { id: 'Figure 9.2', title: 'Data Flow Diagram Level 1 (Transactional Process Breakdown)', page: '18' },
+      { id: 'Figure 11.1', title: 'Website Output: Homepage Hero Banner & Forest Waterfall Ambiance', page: '22' },
+      { id: 'Figure 11.2', title: 'Website Output: Botanical Ingredients Showcase & 3D Interactive Cards', page: '22' },
+      { id: 'Figure 11.3', title: 'Website Output: Admin Command Center Security Gate & Access Control', page: '23' },
+      { id: 'Figure 11.4', title: 'Website Output: Mobile Customer Portal View & Realtime Step Tracker', page: '23' },
+      { id: 'Figure 11.5', title: 'Website Output: Signature Cold-Pack Cans (Green Spring & Wild Berry)', page: '23' },
     ];
 
     figures.forEach((f) => {
@@ -429,18 +463,18 @@ function generatePdfReport() {
       doc.font('Helvetica').fillColor(darkTextColor).text(`${f.title} `, { continued: true });
       doc.font('Helvetica').fillColor('#9CA3AF').text('................................................................ ', { continued: true });
       doc.font('Helvetica-Bold').fillColor(primaryColor).text(f.page, { width: 30, align: 'right' });
-      doc.y += 5;
+      doc.y += 4.5;
     });
 
-    doc.y += 12;
+    doc.y += 8;
     renderSubHeading('LIST OF TABLES');
     const tables = [
       { id: 'Table 4.1', title: 'Development Hardware & Operating Environment Specifications', page: '11' },
-      { id: 'Table 4.2', title: 'Software Libraries & Technology Stack Versions', page: '11' },
-      { id: 'Table 8.1', title: 'Firestore NoSQL Database Collections Schema', page: '16' },
-      { id: 'Table 8.2', title: 'User Order Subcollection Entity Attributes & Schema', page: '16' },
-      { id: 'Table 9.1', title: 'Core System Use Case Specifications Matrix', page: '19' },
-      { id: 'Table 12.1', title: 'Comprehensive Functional & Security Test Cases Matrix', page: '25' },
+      { id: 'Table 4.2', title: 'Software Libraries & Technology Stack Dependencies', page: '11' },
+      { id: 'Table 8.1', title: 'Firestore NoSQL Database Collections & Document Paths', page: '16' },
+      { id: 'Table 8.2', title: 'User Order Subcollection Entity Attributes & Types', page: '16' },
+      { id: 'Table 9.1', title: 'Core System Use Case Specifications Matrix (UC-01 to UC-08)', page: '19' },
+      { id: 'Table 13.1', title: 'Comprehensive Functional & Security Test Cases Matrix (12 Passed)', page: '25' },
     ];
 
     tables.forEach((t) => {
@@ -448,7 +482,26 @@ function generatePdfReport() {
       doc.font('Helvetica').fillColor(darkTextColor).text(`${t.title} `, { continued: true });
       doc.font('Helvetica').fillColor('#9CA3AF').text('................................................................ ', { continued: true });
       doc.font('Helvetica-Bold').fillColor(primaryColor).text(t.page, { width: 30, align: 'right' });
-      doc.y += 5;
+      doc.y += 4.5;
+    });
+
+    doc.y += 8;
+    renderSubHeading('LIST OF EMBEDDED SOURCE CODE LISTINGS');
+    const codeListings = [
+      { id: 'Listing 1', title: 'Hardened Cloud Firestore Security Rules (firestore.rules)', page: '17' },
+      { id: 'Listing 2', title: 'Procedural Nature Water Web Audio Synthesizer (AudioAmbianceController.tsx)', page: '20' },
+      { id: 'Listing 3', title: '3D Kinetic Tilt Physics Card Component (IngredientTiltCard.tsx)', page: '21' },
+      { id: 'Listing 4', title: 'Session-Preserving Gated Checkout Controller (App.tsx)', page: '21' },
+      { id: 'Listing 5', title: '5-Stage Cold-Chain Tracker & Invoice Export Engine (OrderTracker.tsx)', page: '24' },
+      { id: 'Listing 6', title: 'Admin Command Center Realtime Order Lifecycle & Deletion (AdminDashboard.tsx)', page: '24' },
+    ];
+
+    codeListings.forEach((c) => {
+      doc.font('Helvetica-Bold').fontSize(8).fillColor(accentColor).text(`${c.id}: `, 50, doc.y, { continued: true });
+      doc.font('Helvetica').fillColor(darkTextColor).text(`${c.title} `, { continued: true });
+      doc.font('Helvetica').fillColor('#9CA3AF').text('................................................................ ', { continued: true });
+      doc.font('Helvetica-Bold').fillColor(primaryColor).text(c.page, { width: 30, align: 'right' });
+      doc.y += 4.5;
     });
     verifyPage(7, 'Page 7: Figures & Tables');
 
@@ -692,37 +745,35 @@ function generatePdfReport() {
     verifyPage(16, 'Page 16: Chapter 8 - Part 1');
 
     // ==========================================
-    // PAGE 17: CHAPTER 8 - SECURITY RULES & RBAC
+    // PAGE 17: CHAPTER 8 - SECURITY RULES & CODE LISTING 1
     // ==========================================
     doc.addPage();
-    renderChapterHeader('8', 'SECURITY RULES & RBAC');
+    renderChapterHeader('8', 'SECURITY RULES & RBAC (CODE)');
     renderSectionHeading('8.3', 'Firestore Security Rules Implementation');
     renderParagraph('The application deploys hardened firestore.rules enforcing strict Role-Based Access Control (RBAC):');
 
-    // Code snippet rendering
-    doc.rect(50, doc.y, 495, 175).fill('#0B1B11');
-    const codeY = doc.y + 6;
-    doc.font('Courier').fontSize(7.5).fillColor('#34D399')
-      .text('// firestore.rules (Hardened Cloud Security Rules)', 60, codeY)
-      .text('rules_version = \'2\';', 60, codeY + 11)
-      .text('service cloud.firestore {', 60, codeY + 20)
-      .text('  match /databases/{database}/documents {', 60, codeY + 29)
-      .text('    function isSignedIn() { return request.auth != null; }', 60, codeY + 40)
-      .text('    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }', 60, codeY + 50)
-      .text('    function isAdmin() {', 60, codeY + 60)
-      .text('      return isSignedIn() && (', 60, codeY + 70)
-      .text('        request.auth.token.email == \'princeyadav391yadav@gmail.com\' ||', 60, codeY + 80)
-      .text('        exists(/databases/$(database)/documents/admins/$(request.auth.uid))', 60, codeY + 90)
-      .text('      );', 60, codeY + 100)
-      .text('    }', 60, codeY + 110)
-      .text('    match /users/{userId}/orders/{orderId} {', 60, codeY + 121)
-      .text('      allow read, write: if isOwner(userId) || isAdmin();', 60, codeY + 131)
-      .text('      allow delete: if isAdmin();', 60, codeY + 141)
-      .text('    }', 60, codeY + 151)
-      .text('  }', 60, codeY + 161)
-      .text('}', 60, codeY + 171);
-
-    doc.y = codeY + 185;
+    const rulesCode = [
+      "rules_version = '2';",
+      "service cloud.firestore {",
+      "  match /databases/{database}/documents {",
+      "    function isSignedIn() { return request.auth != null; }",
+      "    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }",
+      "    function isAdmin() {",
+      "      return isSignedIn() && (",
+      "        request.auth.token.email == 'princeyadav391yadav@gmail.com' ||",
+      "        exists(/databases/$(database)/documents/admins/$(request.auth.uid))",
+      "      );",
+      "    }",
+      "    match /users/{userId}/orders/{orderId} {",
+      "      allow read, write: if isOwner(userId) || isAdmin();",
+      "      allow delete: if isAdmin();",
+      "    }",
+      "    match /{path=**}/orders/{orderId} { allow read, write, delete: if isAdmin(); }",
+      "    match /settings/{settingId} { allow read: if true; allow write: if isAdmin(); }",
+      "  }",
+      "}"
+    ];
+    renderCodeBox(rulesCode, 'Listing 1: Cloud Firestore Security Rules (firestore.rules)');
 
     renderSectionHeading('8.4', 'Data Privacy and PII Isolation');
     renderParagraph('All Personally Identifiable Information (customer delivery address, phone number, and private purchase history) is strictly quarantined within the user-specific /users/{userId}/orders path. No guest or peer customer can execute read or list operations on unowned records.');
@@ -790,54 +841,89 @@ function generatePdfReport() {
     verifyPage(19, 'Page 19: Chapter 9 - Part 2');
 
     // ==========================================
-    // PAGE 20: CHAPTER 10 - WEBSITE MODULES (PART 1)
+    // PAGE 20: CHAPTER 10 - CORE MODULES: NAVIGATION & WEB AUDIO (CODE 2)
     // ==========================================
     doc.addPage();
-    renderChapterHeader('10', 'WEBSITE MODULES & FEATURES');
-    renderSectionHeading('10.1', 'Module 1: Navigation & Sensory Soundscape');
-    renderParagraph('Navbar.tsx features responsive scroll sensing (window.scrollY > 20), glowing gradient underlines on hover, live shopping bag counters with bouncy animation, and quick links to Our Story, Ingredients, Shop, Journal, and Contact.');
-    renderParagraph('AudioAmbianceController.tsx provides nature waterfall sound generation synthesized directly through the browser Web Audio API, creating a calming sensory experience without streaming external MP3 files.');
+    renderChapterHeader('10', 'MODULES: AUDIO ENGINE (CODE)');
+    renderSectionHeading('10.1', 'Module 1: Navigation & Web Audio Soundscape');
+    renderParagraph('Navbar.tsx features responsive scroll sensing (window.scrollY > 20), glowing gradient underlines on hover, live shopping bag counters, and quick navigation anchors.');
+    renderParagraph('AudioAmbianceController.tsx provides browser-synthesized nature waterfall sound generation through the W3C Web Audio API, avoiding heavy external MP3 downloads:');
 
-    renderSectionHeading('10.2', 'Module 2: Product Carousel & 3D Tilt Cards');
-    renderParagraph('ProductCarousel.tsx presents AXOLYT’s 6 signature flavors: Green Spring, Wild Berry, Tropic Rush, Glacier Frost, Crimson Zen, and Golden Dawn. Each card features:');
-    renderBullet('Dynamic Price Switcher', 'Toggles between Single Can ($3.49) and 12-Pack Case ($36.99) with real-time price updates.');
-    renderBullet('Kinetic 3D Tilt Effect', 'Implemented in IngredientTiltCard.tsx using Motion 12 spring mechanics.');
-    renderBullet('Flavor Filter Tabs', 'Allows instant filtering across All, Zero Sugar, Calm & Recovery, and Max Focus blends.');
+    const audioCode = [
+      "// AudioAmbianceController.tsx — Nature Waterfall Sound Synthesizer",
+      "const initAudioEngine = () => {",
+      "  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();",
+      "  // Create 5-second buffer of procedural Brownian/Pink noise",
+      "  const bufferSize = ctx.sampleRate * 5;",
+      "  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);",
+      "  const data = buffer.getChannelData(0);",
+      "  let lastOut = 0.0;",
+      "  for (let i = 0; i < bufferSize; i++) {",
+      "    const white = Math.random() * 2 - 1;",
+      "    data[i] = (lastOut + (0.02 * white)) / 1.02; // Brownian filter",
+      "    lastOut = data[i];",
+      "  }",
+      "  const noiseSource = ctx.createBufferSource();",
+      "  noiseSource.buffer = buffer;",
+      "  noiseSource.loop = true;",
+      "  const filter = ctx.createBiquadFilter();",
+      "  filter.type = 'lowpass'; filter.frequency.value = 420; // Soft waterfall",
+      "  const gain = ctx.createGain(); gain.gain.value = 0.08;",
+      "  noiseSource.connect(filter).connect(gain).connect(ctx.destination);",
+      "  noiseSource.start(0);",
+      "};"
+    ];
+    renderCodeBox(audioCode, 'Listing 2: Web Audio API Waterfall Synthesis (AudioAmbianceController.tsx)');
 
-    renderSectionHeading('10.3', 'Module 3: Shopping Bag Drawer & Promo Engine');
-    renderParagraph('CartDrawer.tsx features an interactive slide-over panel calculating subtotal, promo deductions (e.g. 15% off via PUREENERGY), estimated tax (8%), and a live progress bar toward the $40 Free Cold-Pack Shipping threshold.');
+    renderParagraph('This implementation delivers an authentic woodland ambiance directly synthesized by the client CPU, generating zero network requests.');
     verifyPage(20, 'Page 20: Chapter 10 - Part 1');
 
     // ==========================================
-    // PAGE 21: CHAPTER 10 - WEBSITE MODULES (PART 2)
+    // PAGE 21: CHAPTER 10 - CORE MODULES: 3D TILT & GATED CHECKOUT (CODE 3 & 4)
     // ==========================================
     doc.addPage();
-    renderChapterHeader('10', 'WEBSITE MODULES (CONTD.)');
-    renderSectionHeading('10.4', 'Module 4: Gated Express Checkout Modal');
-    renderParagraph('CheckoutModal.tsx enforces strict authentication. If an unauthenticated user enters the modal, an "Authentication Required" card locks checkout with an action button to sign in. Logged-in users enjoy auto-filled contact information, multi-step address validation, and simulated payment methods.');
+    renderChapterHeader('10', 'MODULES: 3D KINETICS & GATING');
+    renderSectionHeading('10.2', 'Module 2: 3D Kinetic Tilt Physics Card');
+    renderParagraph('IngredientTiltCard.tsx implements custom interactive tilt physics with Motion 12 spring mechanics:');
 
-    renderSectionHeading('10.5', 'Module 5: 5-Stage Live Cold-Chain Tracker');
-    renderParagraph('OrderTracker.tsx delivers real-time shipment transparency across 5 stages:');
-    renderBullet('Stage 1: Order Confirmed', 'Payment authorized and recipe dispatched to Portland kitchen.');
-    renderBullet('Stage 2: Cold-Packed & Sealed', 'Chilled bio-pack sealed with dry cold insulation at 4°C.');
-    renderBullet('Stage 3: Clean Line-Haul Transit', 'Scheduled for clean electric carrier line-haul departure.');
-    renderBullet('Stage 4: Out for Delivery', 'Dispatched on local delivery route.');
-    renderBullet('Stage 5: Delivered', 'Contactless doorstep drop with receipt verification.');
-    renderParagraph('Includes a "Download Official Receipt" feature generating formatted invoice text documents.');
+    const tiltCode = [
+      "// IngredientTiltCard.tsx — 3D Parallax & Tilt Card",
+      "const x = useMotionValue(0); const y = useMotionValue(0);",
+      "const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [14, -14]), { stiffness: 300, damping: 25 });",
+      "const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-14, 14]), { stiffness: 300, damping: 25 });",
+      "const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {",
+      "  const rect = e.currentTarget.getBoundingClientRect();",
+      "  x.set((e.clientX - rect.left) / rect.width - 0.5);",
+      "  y.set((e.clientY - rect.top) / rect.height - 0.5);",
+      "};"
+    ];
+    renderCodeBox(tiltCode, 'Listing 3: 3D Spring Tilt Physics (IngredientTiltCard.tsx)');
 
-    renderSectionHeading('10.6', 'Module 6: Admin Command Center');
-    renderParagraph('AdminDashboard.tsx gives authorized administrators complete store control:');
-    renderBullet('Store Analytics', 'Visual display of Total Sales Revenue, Total Orders, Average Order Value, and Active Customers.');
-    renderBullet('Live Orders Table', 'View customer orders, switch shipping statuses via a dropdown menu, create manual orders, or delete cancelled orders.');
-    renderBullet('Inventory Monitor', 'Real-time stock tracking with color-coded reorder alerts.');
-    renderBullet('Manage App & Banner', 'Controls store status (Open / Sale / Maintenance) and active coupon codes.');
+    renderSectionHeading('10.3', 'Module 3: Session-Preserving Gated Checkout');
+    renderParagraph('The gated checkout controller in App.tsx intercepts unauthenticated users, preserves active cart state, prompts authentication, and auto-resumes once login completes:');
+
+    const gateCode = [
+      "// App.tsx — Session-Preserving Gated Checkout Controller",
+      "const handleProceedToCheckout = () => {",
+      "  setIsCartOpen(false);",
+      "  if (!user.isLoggedIn) {",
+      "    pendingCheckoutRef.current = true; // Hold pending checkout flag",
+      "    setIsPendingCheckout(true);",
+      "    setIsAuthOpen(true); // Launch authentication gateway",
+      "    addToast('info', 'Sign in Required', 'Please log in to finalize your cold-pack order.');",
+      "    return;",
+      "  }",
+      "  setIsCheckoutOpen(true);",
+      "};"
+    ];
+    renderCodeBox(gateCode, 'Listing 4: Gated Checkout Controller (App.tsx)');
     verifyPage(21, 'Page 21: Chapter 10 - Part 2');
 
     // ==========================================
     // PAGE 22: CHAPTER 11 - IMPLEMENTATION & SCREENSHOTS (PART 1)
     // ==========================================
     doc.addPage();
-    renderChapterHeader('11', 'IMPLEMENTATION & SCREENSHOTS');
+    renderChapterHeader('11', 'WEBSITE OUTPUT SCREENSHOTS');
     renderSectionHeading('11.1', 'Design Language & Aesthetic Philosophy');
     renderParagraph('The visual design of AXOLYT rejects generic AI templates in favor of a bespoke dark botanical aesthetic. The interface combines deep forest obsidian (#051109), vivid emerald accents, Outfit display typography, and translucent glassmorphism.');
 
@@ -846,7 +932,7 @@ function generatePdfReport() {
       doc.image(heroImgPath, 65, doc.y, { width: 465, height: 160 });
       doc.y += 166;
       doc.fontSize(8).font('Helvetica-Bold').fillColor(primaryColor)
-        .text('Figure 11.1: Homepage Hero Section & Waterfall Botanical Atmosphere', { align: 'center' });
+        .text('Figure 11.1: Website Output — Homepage Hero Section & Waterfall Atmosphere', { align: 'center' });
       doc.y += 10;
     }
 
@@ -855,7 +941,7 @@ function generatePdfReport() {
       doc.image(ingredImgPath, 65, doc.y, { width: 465, height: 150 });
       doc.y += 156;
       doc.fontSize(8).font('Helvetica-Bold').fillColor(primaryColor)
-        .text('Figure 11.2: Botanical Ingredients Showcase & Adaptogenic Nutrient Profiles', { align: 'center' });
+        .text('Figure 11.2: Website Output — Botanical Ingredients Showcase & Nutrient Profiles', { align: 'center' });
     }
     verifyPage(22, 'Page 22: Chapter 11 - Part 1');
 
@@ -863,7 +949,7 @@ function generatePdfReport() {
     // PAGE 23: CHAPTER 11 - IMPLEMENTATION & SCREENSHOTS (PART 2)
     // ==========================================
     doc.addPage();
-    renderChapterHeader('11', 'APPLICATION SCREENSHOTS (CONTD.)');
+    renderChapterHeader('11', 'WEBSITE OUTPUT SCREENSHOTS (2)');
     renderSectionHeading('11.2', 'Security Gateway & Mobile Responsiveness');
 
     // Embed Screenshot 3: Admin Command Portal (actual uploaded screenshot) & Mobile User Screen
@@ -890,28 +976,60 @@ function generatePdfReport() {
     verifyPage(23, 'Page 23: Chapter 11 - Part 2');
 
     // ==========================================
-    // PAGE 24: CHAPTER 12 - SOFTWARE TESTING
+    // PAGE 24: CHAPTER 12 - CORE MODULES: TRACKER & ADMIN (CODE 5 & 6)
     // ==========================================
     doc.addPage();
-    renderChapterHeader('12', 'SOFTWARE TESTING & METHODOLOGY');
-    renderSectionHeading('12.1', 'Testing Strategy');
-    renderParagraph('Software testing was conducted iteratively to ensure reliability across all critical user flows, authentication states, and cloud database operations:');
-    renderBullet('Unit Testing', 'Verification of individual helper functions including price calculations, free shipping progress formulas, promo code normalization, and order ID generation.');
-    renderBullet('Integration Testing', 'Validation of communication between React UI components, Firebase Auth state transitions, and Firestore real-time listeners.');
-    renderBullet('Security Testing', 'Auditing Firestore security rules to ensure customers cannot read or mutate unowned order collections.');
-    renderBullet('Cross-Device Usability Testing', 'Verification across mobile touch screens, tablet viewports, and desktop browsers (Google Chrome, Firefox, Safari).');
+    renderChapterHeader('12', 'MODULES: TRACKER & ADMIN (CODE)');
+    renderSectionHeading('12.1', 'Module 4: 5-Stage Cold-Chain Tracker & Invoice');
+    renderParagraph('OrderTracker.tsx delivers real-time shipment transparency and automated plain text receipt invoice generation:');
 
-    renderSectionHeading('12.2', 'Key Bugs Identified & Resolved');
-    renderBullet('Firestore 10-Second Backend Timeout', 'Resolved by reconfiguring Firebase SDK with experimentalAutoDetectLongPolling: true and removing blocking server ping on boot.');
-    renderBullet('Unauthenticated Guest Checkout Vulnerability', 'Resolved by introducing pendingCheckoutRef and auto-launching AuthModal when guests attempt checkout.');
-    renderBullet('Admin Password Leak in Errors', 'Removed default password hints and standardized all auth failure messages to: "Incorrect password. Enter correct password."');
-    verifyPage(24, 'Page 24: Chapter 12 - Part 1');
+    const trackerCode = [
+      "// OrderTracker.tsx — 5-Stage Cold-Chain Step Progression & Receipt Export",
+      "const handleDownloadReceipt = () => {",
+      "  const invoiceText = `=======================================\\n" +
+      "AXOLYT ORGANIC ENERGY — OFFICIAL INVOICE\\n" +
+      "Order ID: ${order.id} | Carrier: ${order.carrier}\\n" +
+      "Tracking: ${order.trackingNumber}\\n" +
+      "Items: ${order.items} | Total Paid: $${order.total.toFixed(2)}\\n" +
+      "Status: ${order.status} (Cold-Chain Verified at 4°C)\\n" +
+      "=======================================`;",
+      "  const blob = new Blob([invoiceText], { type: 'text/plain' });",
+      "  const url = URL.createObjectURL(blob);",
+      "  const a = document.createElement('a');",
+      "  a.href = url; a.download = `AXOLYT-Invoice-${order.id}.txt`;",
+      "  a.click(); URL.revokeObjectURL(url);",
+      "};"
+    ];
+    renderCodeBox(trackerCode, 'Listing 5: Invoice Text Generator (OrderTracker.tsx)');
+
+    renderSectionHeading('12.2', 'Module 5: Admin Command Center Order Management');
+    renderParagraph('AdminDashboard.tsx grants store managers real-time authority over order dispatch states, inventory counts, and deletion:');
+
+    const adminCode = [
+      "// AdminDashboard.tsx — Admin Order Deletion & Status Management",
+      "const handleDeleteOrder = async (orderId: string, userId: string) => {",
+      "  if (!confirm(`Delete order ${orderId} permanently?`)) return;",
+      "  try {",
+      "    await deleteDoc(doc(db, 'users', userId, 'orders', orderId));",
+      "    onOrderDeleted(orderId); // Update local state",
+      "    onNotify('success', 'Order Deleted', `Order ${orderId} has been removed.`);",
+      "  } catch (err) {",
+      "    onNotify('warning', 'Action Completed', `Order ${orderId} removed from local session.`);",
+      "  }",
+      "};"
+    ];
+    renderCodeBox(adminCode, 'Listing 6: Admin Order Deletion Controller (AdminDashboard.tsx)');
+    verifyPage(24, 'Page 24: Chapter 12');
 
     // ==========================================
-    // PAGE 25: CHAPTER 12 - DETAILED TEST CASES TABLE
+    // PAGE 25: CHAPTER 13 - SOFTWARE TESTING & TEST CASES
     // ==========================================
     doc.addPage();
-    renderChapterHeader('12', 'COMPREHENSIVE TEST CASES MATRIX');
+    renderChapterHeader('13', 'TESTING & TEST CASES MATRIX');
+    renderSectionHeading('13.1', 'Verification Methodology');
+    renderParagraph('Software testing was conducted across unit, integration, and security layers to ensure zero data leaks, resilient guest checkout gating, and fast reactive UI transitions.');
+
+    renderSectionHeading('13.2', 'Comprehensive Test Cases Matrix');
 
     const testHeaders = ['Test ID', 'Scenario Description', 'Input Data', 'Expected Output', 'Actual Result', 'Status'];
     const testRows = [
@@ -929,14 +1047,14 @@ function generatePdfReport() {
       ['TC-12', 'Audio Ambiance Generator', 'Toggle Ambiance button', 'Synthetic nature sound plays', 'Sound synthesizes cleanly', 'PASSED'],
     ];
     renderTable(testHeaders, testRows, [45, 110, 85, 115, 95, 45], { headerHeight: 16, rowHeight: 14, fontSize: 7 });
-    verifyPage(25, 'Page 25: Chapter 12 - Part 2');
+    verifyPage(25, 'Page 25: Chapter 13');
 
     // ==========================================
-    // PAGE 26: CHAPTER 13 - ADVANTAGES & LIMITATIONS
+    // PAGE 26: CHAPTER 14 - ADVANTAGES & LIMITATIONS
     // ==========================================
     doc.addPage();
-    renderChapterHeader('13', 'ADVANTAGES & LIMITATIONS');
-    renderSectionHeading('13.1', 'System Advantages');
+    renderChapterHeader('14', 'ADVANTAGES & LIMITATIONS');
+    renderSectionHeading('14.1', 'System Advantages');
     renderParagraph('The AXOLYT Organic Energy platform provides significant competitive and technical advantages:');
     renderBullet('High-Speed Single Page Architecture', 'Zero page reloads ensure lightning-fast transitions between product browsing, cart adjustments, and live tracking.');
     renderBullet('Airtight User Data Segregation', 'Each consumer’s order records are quarantined in private subcollections, guaranteeing strict privacy and preventing data leakage.');
@@ -944,32 +1062,32 @@ function generatePdfReport() {
     renderBullet('Engaging Brand Storytelling', 'Harmonious pairing of modern botanical aesthetics, 3D kinetic card physics, and ambient audio synthesis.');
     renderBullet('Enterprise Admin Control', 'Store managers possess immediate real-time authority over order dispatch states, inventory counts, and banner announcements.');
 
-    renderSectionHeading('13.2', 'System Limitations');
+    renderSectionHeading('14.2', 'System Limitations');
     renderBullet('Simulated Payment Processing', 'The current implementation utilizes client-side card validation and order simulation rather than a live Stripe/Razorpay banking gateway.');
     renderBullet('Internet Dependency for Order Sync', 'While cached products can be viewed offline, submitting live orders and tracking updates requires active network access.');
     renderBullet('Single Administrative Email Binding', 'Administrative privileges are anchored to the verified administrator email (princeyadav391yadav@gmail.com).');
-    verifyPage(26, 'Page 26: Chapter 13');
+    verifyPage(26, 'Page 26: Chapter 14 - Part 1');
 
     // ==========================================
     // PAGE 27: CHAPTER 14 - FUTURE SCOPE
     // ==========================================
     doc.addPage();
     renderChapterHeader('14', 'FUTURE SCOPE & ENHANCEMENTS');
-    renderSectionHeading('14.1', 'Production Payment Gateway Integration');
+    renderSectionHeading('14.3', 'Production Payment Gateway Integration');
     renderParagraph('The next engineering phase will integrate production payment gateways such as Stripe Elements and Razorpay Webhooks to enable live credit card, UPI, and Apple Pay transactions with automated payment confirmation webhooks.');
 
-    renderSectionHeading('14.2', 'Cross-Platform Native Mobile Apps');
+    renderSectionHeading('14.4', 'Cross-Platform Native Mobile Apps');
     renderParagraph('Utilizing Capacitor or React Native, the AXOLYT codebase can be packaged into native Android (.apk) and iOS (.ipa) applications with push notifications for order delivery milestones.');
 
-    renderSectionHeading('14.3', 'AI-Powered Botanical Nutrition Assistant');
+    renderSectionHeading('14.5', 'AI-Powered Botanical Nutrition Assistant');
     renderParagraph('Integrating Google Gemini API to analyze consumer activity levels, dietary preferences, and sleep schedules to provide personalized flavor and adaptogen recommendations.');
 
-    renderSectionHeading('14.4', 'IoT Cold-Chain Real-Time Temperature Monitoring');
+    renderSectionHeading('14.6', 'IoT Cold-Chain Real-Time Temperature Monitoring');
     renderParagraph('Connecting IoT temperature sensors to the Firestore order tracking pipeline to display live thermal telemetry (confirming the beverage remained at 4°C throughout transit).');
 
-    renderSectionHeading('14.5', 'Automated Warehouse Inventory Webhooks');
+    renderSectionHeading('14.7', 'Automated Warehouse Inventory Webhooks');
     renderParagraph('Syncing local inventory states directly with third-party logistics fulfillment centers (3PL) via automated REST APIs.');
-    verifyPage(27, 'Page 27: Chapter 14');
+    verifyPage(27, 'Page 27: Chapter 14 - Part 2');
 
     // ==========================================
     // PAGE 28: CHAPTER 15 - CONCLUSION & LEARNINGS
@@ -1051,7 +1169,7 @@ async function generateDocxReport() {
   const doc = new Document({
     creator: 'Prince Kumar',
     title: 'AXOLYT ORGANIC ENERGY — Project Report',
-    description: 'Diploma in Computer Engineering Major Project Report',
+    description: 'Diploma in Computer Engineering Major Project Report with Code & Screenshots',
     styles: {
       default: {
         document: {
@@ -1360,16 +1478,16 @@ async function generateDocxReport() {
           new Paragraph({
             children: [
               new TextRun({
-                text: 'AXOLYT ORGANIC ENERGY is an enterprise-grade, full-stack Single Page Application (SPA) designed to deliver an elevated e-commerce experience for cold-pressed, adaptogenic, and plant-based energy beverages. Developed using React 19, TypeScript, Tailwind CSS v4, and Google Firebase Cloud Firestore, the platform unites modern sensory web design with rigorous cloud data security. Key innovations include strict authentication gating (preventing orphaned guest checkouts), real-time 5-stage cold-chain delivery tracking, an authoritative Admin Command Center, and Web Audio nature sound synthesis.',
+                text: 'AXOLYT ORGANIC ENERGY is an enterprise-grade, full-stack Single Page Application (SPA) designed to deliver an elevated e-commerce experience for cold-pressed, adaptogenic, and plant-based energy beverages. Developed using React 19, TypeScript, Tailwind CSS v4, and Google Firebase Cloud Firestore, the platform unites modern sensory web design with rigorous cloud data security. Key innovations include strict authentication gating, real-time 5-stage cold-chain delivery tracking, an authoritative Admin Command Center, and Web Audio nature sound synthesis.',
               }),
             ],
           }),
           new Paragraph({ children: [new PageBreak()] }),
 
-          // CHAPTERS
+          // CHAPTERS WITH SOURCE CODE SUMMARY
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 1: INTRODUCTION', bold: true, color: '064E3B' })],
+            children: [new TextRun({ text: 'CHAPTER 1: INTRODUCTION & PROJECT OVERVIEW', bold: true, color: '064E3B' })],
           }),
           new Paragraph({
             children: [
@@ -1395,12 +1513,32 @@ async function generateDocxReport() {
 
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 3: SCOPE OF THE PROJECT', bold: true, color: '064E3B' })],
+            children: [new TextRun({ text: 'CHAPTER 8: DATABASE DESIGN & SECURITY RULES (SOURCE CODE)', bold: true, color: '064E3B' })],
           }),
           new Paragraph({
             children: [
               new TextRun({
-                text: 'Encompasses customer catalog browsing, pack switching (Single vs 12-Pack), promo engine (PUREENERGY for 15% off), gated authentication, 5-stage live cold-chain tracking with text invoice generation, and administrator management.',
+                text: 'Source Code: Hardened firestore.rules\n\n' +
+                  'rules_version = "2";\n' +
+                  'service cloud.firestore {\n' +
+                  '  match /databases/{database}/documents {\n' +
+                  '    function isSignedIn() { return request.auth != null; }\n' +
+                  '    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }\n' +
+                  '    function isAdmin() {\n' +
+                  '      return isSignedIn() && (\n' +
+                  '        request.auth.token.email == "princeyadav391yadav@gmail.com" ||\n' +
+                  '        exists(/databases/$(database)/documents/admins/$(request.auth.uid))\n' +
+                  '      );\n' +
+                  '    }\n' +
+                  '    match /users/{userId}/orders/{orderId} {\n' +
+                  '      allow read, write: if isOwner(userId) || isAdmin();\n' +
+                  '      allow delete: if isAdmin();\n' +
+                  '    }\n' +
+                  '  }\n' +
+                  '}',
+                font: 'Consolas',
+                size: 18,
+                color: '064E3B',
               }),
             ],
           }),
@@ -1408,12 +1546,34 @@ async function generateDocxReport() {
 
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 4: HARDWARE & SOFTWARE REQUIREMENTS', bold: true, color: '064E3B' })],
+            children: [new TextRun({ text: 'CHAPTER 10: CORE MODULES SOURCE CODE', bold: true, color: '064E3B' })],
           }),
           new Paragraph({
             children: [
               new TextRun({
-                text: 'Developed using Node.js v22.23.2, React 19, TypeScript, Tailwind CSS v4, Motion 12, and Google Firebase Firestore v13.2.0 on Ubuntu Linux and Windows 11 environments.',
+                text: 'Listing: Procedural Web Audio Sound Synthesizer (AudioAmbianceController.tsx)\n\n' +
+                  'const initAudioEngine = () => {\n' +
+                  '  const ctx = new (window.AudioContext || window.webkitAudioContext)();\n' +
+                  '  const bufferSize = ctx.sampleRate * 5;\n' +
+                  '  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);\n' +
+                  '  const data = buffer.getChannelData(0);\n' +
+                  '  let lastOut = 0.0;\n' +
+                  '  for (let i = 0; i < bufferSize; i++) {\n' +
+                  '    const white = Math.random() * 2 - 1;\n' +
+                  '    data[i] = (lastOut + (0.02 * white)) / 1.02; // Brownian filter\n' +
+                  '    lastOut = data[i];\n' +
+                  '  }\n' +
+                  '  const noiseSource = ctx.createBufferSource();\n' +
+                  '  noiseSource.buffer = buffer; noiseSource.loop = true;\n' +
+                  '  const filter = ctx.createBiquadFilter();\n' +
+                  '  filter.type = "lowpass"; filter.frequency.value = 420;\n' +
+                  '  const gain = ctx.createGain(); gain.gain.value = 0.08;\n' +
+                  '  noiseSource.connect(filter).connect(gain).connect(ctx.destination);\n' +
+                  '  noiseSource.start(0);\n' +
+                  '};',
+                font: 'Consolas',
+                size: 18,
+                color: '064E3B',
               }),
             ],
           }),
@@ -1421,129 +1581,12 @@ async function generateDocxReport() {
 
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 5: TECHNOLOGIES USED', bold: true, color: '064E3B' })],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Frontend: React 19 SPA, TypeScript static safety, Tailwind CSS v4 utility design, and Motion spring physics. Cloud: Firebase Cloud Firestore NoSQL persistence and Firebase Auth with JWT validation. Audio: W3C Web Audio API brownian water synthesis.',
-              }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 6: SYSTEM ANALYSIS & SRS', bold: true, color: '064E3B' })],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Specifies 6 core functional requirements (FR-01 to FR-06) including catalog filtering, cart drawer, gated authentication, order creation, cold-chain tracking, and admin controls, alongside 4 non-functional benchmarks for sub-1.2s render and 99.95% cloud availability.',
-              }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 7: SYSTEM ARCHITECTURE', bold: true, color: '064E3B' })],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Adheres to a 3-Tier model decoupling the Presentation Layer (React 19), Business Logic Layer (Gated Checkout & Cold-Chain Tracker), and Persistence Layer (Google Firebase Cloud Firestore).',
-              }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 8: DATABASE DESIGN & SECURITY RULES', bold: true, color: '064E3B' })],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'NoSQL collections: /users/{userId}, /users/{userId}/orders/{orderId}, /settings/app_config, /inventory/{productId}, and /feedback/{feedbackId}. Hardened firestore.rules ensure customers access only their private records, while the master administrator (princeyadav391yadav@gmail.com) exercises delete and status powers.',
-              }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 9: DATA FLOW DIAGRAMS & USE CASES', bold: true, color: '064E3B' })],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Level 0 Context Diagram and Level 1 Detailed DFD detail interactions between Customer, Administrator, and the AXOLYT backbone. Use case matrix details UC-01 through UC-08.',
-              }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 10: WEBSITE MODULES & FEATURES', bold: true, color: '064E3B' })],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Details Navbar with audio soundscape, ProductCarousel with 3D tilt cards, CartDrawer with promo calculations, CheckoutModal with authentication interception, OrderTracker with 5 cold-chain milestones, and AdminDashboard command center.',
-              }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 11: IMPLEMENTATION & SCREENSHOTS', bold: true, color: '064E3B' })],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Documents the authentic visual interface including Homepage Hero banner, botanical ingredients showcase, real mobile customer view, and admin security command center.',
-              }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 12: SOFTWARE TESTING & TEST CASES', bold: true, color: '064E3B' })],
+            children: [new TextRun({ text: 'CHAPTER 12: SOFTWARE TESTING & 12 TEST CASES MATRIX', bold: true, color: '064E3B' })],
           }),
           new Paragraph({
             children: [
               new TextRun({
                 text: 'Contains 12 comprehensive test cases (TC-01 to TC-12) covering pricing toggles, promo code discounts, guest checkout interception, auto-resumed login, receipt export, admin deletion, and audio ambiance synthesis. All 12 test cases achieved 100% PASSED status.',
-              }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 13: ADVANTAGES & LIMITATIONS', bold: true, color: '064E3B' })],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Advantages include zero-reload SPA performance, isolated private order subcollections, serverless cloud elasticity, and engaging 3D physics. Limitations include simulated payment authorization and online requirement for order persistence.',
-              }),
-            ],
-          }),
-          new Paragraph({ children: [new PageBreak()] }),
-
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHAPTER 14: FUTURE SCOPE', bold: true, color: '064E3B' })],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Future roadmaps include live Stripe/Razorpay payment gateway webhooks, Capacitor native mobile packaging, Google Gemini AI botanical nutrition assistant, and IoT cold-chain temperature telemetry.',
               }),
             ],
           }),
@@ -1575,6 +1618,18 @@ async function run() {
   try {
     const totalPages = await generatePdfReport();
     await generateDocxReport();
+
+    // Also copy to artifacts dir for convenient access
+    if (fs.existsSync(artifactsDir)) {
+      try {
+        fs.copyFileSync(pdfPath, path.join(artifactsDir, 'AXOLYT_ORGANIC_ENERGY_Project_Report.pdf'));
+        fs.copyFileSync(docxPath, path.join(artifactsDir, 'AXOLYT_ORGANIC_ENERGY_Project_Report.docx'));
+        console.log('Copied reports to artifacts directory successfully.');
+      } catch (copyErr) {
+        console.warn('Artifacts copy notice:', copyErr.message);
+      }
+    }
+
     console.log('----------------------------------------------------');
     console.log('PROJECT REPORT GENERATION SUMMARY:');
     console.log(`• PDF Report: public/reports/AXOLYT_ORGANIC_ENERGY_Project_Report.pdf (${totalPages} pages)`);

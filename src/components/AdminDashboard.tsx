@@ -41,6 +41,7 @@ import { UserProfile, UserOrder, InventoryItem, FeedbackItem, AdminCustomerRecor
 import { PRODUCTS } from '../data/products';
 import {
   db,
+  auth,
   createGoogleDocReport,
   getAccessToken,
   loginWithGoogle,
@@ -289,7 +290,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // 2. Fetch all customers & accounts across store
   useEffect(() => {
-    if (!isOpen || !isAdmin) return;
+    if (!isOpen || !isAdmin || !auth.currentUser) return;
 
     const unsubscribe = onSnapshot(
       collection(db, 'users'),
@@ -323,7 +324,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // 3. Fetch all orders across all customers using collectionGroup
   useEffect(() => {
-    if (!isOpen || !isAdmin) return;
+    if (!isOpen || !isAdmin || !auth.currentUser) {
+      setAllOrders(orders);
+      return;
+    }
 
     try {
       const ordersGroupRef = collectionGroup(db, 'orders');
