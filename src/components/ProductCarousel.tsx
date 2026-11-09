@@ -235,13 +235,16 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({
           </div>
         )}
 
-        {/* Sampler Variety Pack Banner */}
-        <div className="mt-16 glass-panel-elevated rounded-3xl p-6 sm:p-10 border border-emerald-400/30 flex flex-col lg:flex-row items-center justify-between gap-8 text-left shadow-2xl">
-          <div className="space-y-3 max-w-xl">
-            <span className="text-xs uppercase tracking-widest text-emerald-400 font-bold">
+        {/* Sampler Variety Pack Banner Card */}
+        <div className="group relative overflow-hidden mt-16 glass-panel-elevated rounded-3xl p-6 sm:p-10 border border-emerald-400/30 hover:border-emerald-400/60 transition-all duration-300 flex flex-col lg:flex-row items-center justify-between gap-8 text-left shadow-2xl hover:shadow-emerald-500/15">
+          {/* Ambient background glow on hover */}
+          <div className="absolute -top-24 -right-24 w-60 h-60 rounded-full bg-emerald-500/10 group-hover:bg-emerald-400/20 blur-3xl pointer-events-none transition-all duration-500 group-hover:scale-125" />
+
+          <div className="space-y-3 max-w-xl relative z-10">
+            <span className="text-xs uppercase tracking-widest text-emerald-400 font-bold group-hover:text-emerald-300 transition-colors">
               Can&apos;t Decide? Taste The Full Lineup
             </span>
-            <h3 className="text-2xl sm:text-3xl font-display font-extrabold text-white">
+            <h3 className="text-2xl sm:text-3xl font-display font-extrabold text-white group-hover:text-emerald-200 transition-colors duration-200">
               AXOLYT Complete 6-Flavor 12-Pack Sampler
             </h3>
             <p className="text-emerald-100/80 text-sm leading-relaxed">
@@ -256,16 +259,16 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto relative z-10">
             <div className="text-center sm:text-right">
               <span className="text-xs text-emerald-200/60 line-through mr-2">$41.88</span>
               <span className="text-3xl font-extrabold font-mono text-white">$36.99</span>
             </div>
             <button
               onClick={() => onAddToCart(products[0], 'pack12')}
-              className="w-full sm:w-auto py-3.5 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-emerald-950 font-bold text-sm transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 whitespace-nowrap"
+              className="group/sampler w-full sm:w-auto py-3.5 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-emerald-950 font-bold text-sm transition-all shadow-lg hover:shadow-xl shadow-emerald-500/25 hover:shadow-emerald-400/35 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap"
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className="w-4 h-4 group-hover/sampler:scale-110 group-hover/sampler:-rotate-6 transition-transform duration-200" />
               <span>Add Sampler Pack</span>
             </button>
           </div>
@@ -293,15 +296,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const price = packType === 'single' ? product.priceSingle : product.pricePack12;
 
   return (
-    <div className="group glass-panel-elevated rounded-3xl p-6 border border-emerald-500/25 hover:border-emerald-400/40 transition-all duration-300 flex flex-col justify-between text-left hover:-translate-y-1.5 shadow-xl hover:shadow-2xl hover:shadow-emerald-950/70">
-      <div>
+    <div className="group relative glass-panel-elevated rounded-3xl p-6 border border-emerald-500/25 hover:border-emerald-400/60 transition-all duration-300 flex flex-col justify-between text-left hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-500/15 overflow-hidden">
+      {/* Dynamic ambient hover glow */}
+      <div className="absolute -top-20 -right-20 w-44 h-44 rounded-full bg-emerald-500/10 group-hover:bg-emerald-400/20 blur-3xl pointer-events-none transition-all duration-500 group-hover:scale-125" />
+
+      <div className="relative z-10">
         {/* Top Header: Badge & Rating */}
         <div className="flex items-center justify-between mb-4">
-          <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 group-hover:border-emerald-400/50 group-hover:bg-emerald-500/25 group-hover:shadow-sm group-hover:shadow-emerald-400/20 transition-all duration-300">
             {product.badge}
           </span>
           <div className="flex items-center gap-1 text-xs text-amber-400">
-            <Star className="w-3.5 h-3.5 fill-current" />
+            <Star className="w-3.5 h-3.5 fill-current group-hover:scale-110 transition-transform duration-300" />
             <span className="text-emerald-100 font-semibold">{product.rating}</span>
             <span className="text-emerald-200/50">({product.reviewsCount})</span>
           </div>
@@ -310,18 +316,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Image on Clean Dark Backdrop */}
         <div
           onClick={() => onOpenDetails(product)}
-          className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-black/40 cursor-pointer mb-5 group/img"
+          className="group/img relative aspect-[4/3] rounded-2xl overflow-hidden bg-black/40 cursor-pointer mb-5 shadow-inner"
         >
           <ProductImage
             src={product.image}
             alt={product.name}
             productName={product.name}
             accentColor={product.accentColor}
-            className="w-full h-full transition-transform duration-500 group-hover/img:scale-105"
+            className="w-full h-full object-contain transition-transform duration-500 ease-out group-hover/img:scale-110 group-hover/img:-rotate-1"
           />
           {/* Quick View Overlay on hover */}
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-            <span className="py-2 px-4 rounded-xl glass-panel text-white text-xs font-semibold flex items-center gap-2 border border-emerald-400/30">
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
+            <span className="py-2 px-4 rounded-xl glass-panel text-white text-xs font-semibold flex items-center gap-2 border border-emerald-400/40 translate-y-2 group-hover/img:translate-y-0 transition-transform duration-300 shadow-lg shadow-black/50">
               <Eye className="w-4 h-4" />
               Quick View
             </span>
@@ -331,7 +337,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Title & Tagline */}
         <h3
           onClick={() => onOpenDetails(product)}
-          className="text-2xl font-display font-extrabold text-white cursor-pointer hover:text-emerald-300 transition-colors"
+          className="text-2xl font-display font-extrabold text-white cursor-pointer group-hover:text-emerald-300 transition-colors duration-200"
         >
           {product.name}
         </h3>
@@ -349,7 +355,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           {product.flavorNotes.slice(0, 3).map((note, idx) => (
             <span
               key={idx}
-              className="text-[11px] px-2.5 py-0.5 rounded-md bg-emerald-950/70 text-emerald-200/80 border border-emerald-500/20"
+              className="text-[11px] px-2.5 py-0.5 rounded-md bg-emerald-950/70 text-emerald-200/80 border border-emerald-500/20 hover:-translate-y-0.5 hover:bg-emerald-900/90 hover:text-white hover:border-emerald-400/40 transition-all duration-200 cursor-default"
             >
               {note}
             </span>
@@ -358,12 +364,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       {/* Pricing & Purchase Controls */}
-      <div className="mt-4 pt-4 border-t border-emerald-500/20 space-y-3">
+      <div className="mt-4 pt-4 border-t border-emerald-500/20 space-y-3 relative z-10">
         {/* Pack Selector Toggle */}
         <div className="grid grid-cols-2 gap-2 p-1 bg-emerald-950/60 rounded-xl border border-emerald-500/20">
           <button
             onClick={() => onTogglePack('pack12')}
-            className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all flex flex-col items-center ${
+            className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all flex flex-col items-center hover:scale-[1.02] active:scale-[0.98] ${
               packType === 'pack12'
                 ? 'bg-emerald-500 text-emerald-950 font-bold shadow-sm'
                 : 'text-emerald-200/70 hover:text-white'
@@ -374,7 +380,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </button>
           <button
             onClick={() => onTogglePack('single')}
-            className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all flex flex-col items-center ${
+            className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all flex flex-col items-center hover:scale-[1.02] active:scale-[0.98] ${
               packType === 'single'
                 ? 'bg-emerald-500 text-emerald-950 font-bold shadow-sm'
                 : 'text-emerald-200/70 hover:text-white'
@@ -399,7 +405,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div className="flex gap-2">
             <button
               onClick={() => onOpenDetails(product)}
-              className="p-2.5 rounded-xl glass-panel text-emerald-300 hover:text-white border border-emerald-500/25 transition-colors"
+              className="p-2.5 rounded-xl glass-panel text-emerald-300 hover:text-white border border-emerald-500/25 hover:border-emerald-400/50 hover:bg-emerald-500/20 hover:scale-110 active:scale-95 transition-all duration-200"
               title="Full Details & Facts"
               aria-label="View product details"
             >
@@ -407,9 +413,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </button>
             <button
               onClick={() => onAddToCart(product, packType)}
-              className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5"
+              className="group/btn py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-emerald-950 font-bold text-xs transition-all shadow-md hover:shadow-lg shadow-emerald-500/20 hover:shadow-emerald-400/30 hover:scale-105 active:scale-95 flex items-center gap-1.5"
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className="w-4 h-4 group-hover/btn:scale-110 group-hover/btn:-rotate-6 transition-transform duration-200" />
               <span>Add to Bag</span>
             </button>
           </div>

@@ -38,16 +38,16 @@ export const StatsSection: React.FC = () => {
             return (
               <div
                 key={idx}
-                className="glass-panel-elevated rounded-3xl p-6 sm:p-8 border border-emerald-500/25 text-left relative overflow-hidden group hover:border-emerald-400/50 transition-all duration-300 hover:-translate-y-1"
+                className="glass-panel-elevated rounded-3xl p-6 sm:p-8 border border-emerald-500/25 text-left relative overflow-hidden group hover:border-emerald-400/60 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-500/15 transition-all duration-300 cursor-default"
               >
                 {/* Background glow on hover */}
-                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all pointer-events-none" />
+                <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-400/25 transition-all duration-500 pointer-events-none group-hover:scale-125" />
 
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
-                  <Icon className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-110 group-hover:rotate-6 group-hover:bg-emerald-500/30 group-hover:border-emerald-400/50 transition-all duration-300">
+                  <Icon className="w-5 h-5 group-hover:text-emerald-300 transition-colors" />
                 </div>
 
-                <div className="font-display text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight glow-text-emerald">
+                <div className="font-display text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight glow-text-emerald group-hover:scale-105 origin-left transition-transform duration-300">
                   {stat.value}
                 </div>
 

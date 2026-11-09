@@ -28,16 +28,19 @@ export const BlogSection: React.FC = () => {
             <article
               key={art.id}
               onClick={() => setSelectedArticle(art)}
-              className="group glass-panel-elevated rounded-3xl p-6 sm:p-7 border border-emerald-500/20 hover:border-emerald-400/40 transition-all duration-300 flex flex-col justify-between cursor-pointer hover:-translate-y-1"
+              className="group relative glass-panel-elevated rounded-3xl p-6 sm:p-7 border border-emerald-500/20 hover:border-emerald-400/60 transition-all duration-300 flex flex-col justify-between cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-500/15 overflow-hidden"
             >
-              <div>
+              {/* Subtle ambient light on hover */}
+              <div className="absolute -top-16 -right-16 w-36 h-36 rounded-full bg-emerald-500/10 group-hover:bg-emerald-400/20 blur-2xl pointer-events-none transition-all duration-500 group-hover:scale-125" />
+
+              <div className="relative z-10">
                 <div className="flex items-center gap-2 text-xs text-emerald-300/80 mb-3">
-                  <span className="font-semibold text-emerald-400">{art.category}</span>
+                  <span className="font-semibold text-emerald-400 group-hover:text-emerald-300 transition-colors">{art.category}</span>
                   <span>·</span>
                   <span>{art.readTime}</span>
                 </div>
 
-                <h3 className="text-xl font-display font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">
+                <h3 className="text-xl font-display font-bold text-white group-hover:text-emerald-300 transition-colors duration-200 leading-snug">
                   {art.title}
                 </h3>
 
@@ -46,13 +49,13 @@ export const BlogSection: React.FC = () => {
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-emerald-500/20 flex items-center justify-between">
+              <div className="mt-6 pt-4 border-t border-emerald-500/20 flex items-center justify-between relative z-10">
                 <span className="text-xs text-emerald-200/60 font-medium">
                   {art.author.split(',')[0]}
                 </span>
-                <span className="text-xs font-bold text-emerald-400 group-hover:text-emerald-300 flex items-center gap-1">
-                  Read Article
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <span className="text-xs font-bold text-emerald-400 group-hover:text-emerald-300 flex items-center gap-1.5 transition-colors">
+                  <span>Read Article</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1.5 transition-transform duration-200" />
                 </span>
               </div>
             </article>

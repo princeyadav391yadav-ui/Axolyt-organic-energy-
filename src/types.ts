@@ -78,6 +78,9 @@ export interface OrderTrackingStep {
 
 export interface UserOrder {
   id: string;
+  userId?: string;
+  customerName?: string;
+  customerEmail?: string;
   date: string;
   items: string;
   total: number;
@@ -87,6 +90,8 @@ export interface UserOrder {
   estimatedDelivery: string;
   currentStepIndex: number;
   steps: OrderTrackingStep[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UserProfile {
@@ -95,6 +100,46 @@ export interface UserProfile {
   email: string;
   isLoggedIn: boolean;
   memberTier: string;
+  role?: 'admin' | 'member';
   orders: UserOrder[];
 }
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  stockCases: number;
+  stockSingles: number;
+  status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  reorderThreshold: number;
+  updatedAt: string;
+}
+
+export interface FeedbackItem {
+  id: string;
+  authorName: string;
+  authorEmail?: string;
+  rating: number;
+  flavor: string;
+  comment: string;
+  createdAt: string;
+}
+
+export interface AdminCustomerRecord {
+  uid: string;
+  name: string;
+  email: string;
+  memberTier: string;
+  role: 'admin' | 'member';
+  createdAt?: string;
+  ordersCount?: number;
+}
+
+export interface AppConfig {
+  storeStatus: 'open' | 'sale' | 'maintenance';
+  announcementBanner: string;
+  promoCode: string;
+  discountPercent: number;
+  updatedAt?: string;
+}
+
 

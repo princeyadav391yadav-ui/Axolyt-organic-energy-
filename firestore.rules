@@ -29,10 +29,18 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Admin Access Control Helper (Includes user email from runtime per skill rules)
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'princeyadav391yadav@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
     // Entity Validation Helpers (Strict schema + boundary guards)
     function isValidUser(data) {
       return data.keys().hasAll(['name', 'email', 'memberTier']) &&
-        data.keys().hasOnly(['name', 'email', 'memberTier', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['name', 'email', 'memberTier', 'role', 'createdAt', 'updatedAt']) &&
         data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
         data.email is string && data.email.size() > 3 && data.email.size() <= 150 &&
         data.memberTier is string && data.memberTier.size() <= 60;
@@ -40,14 +48,36 @@ service cloud.firestore {
 
     function isValidOrder(data) {
       return data.keys().hasAll(['userId', 'id', 'items', 'total', 'status', 'carrier', 'trackingNumber']) &&
-        data.keys().hasOnly(['userId', 'id', 'date', 'items', 'total', 'status', 'carrier', 'trackingNumber', 'estimatedDelivery', 'currentStepIndex', 'steps', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['userId', 'id', 'date', 'items', 'total', 'status', 'carrier', 'trackingNumber', 'estimatedDelivery', 'currentStepIndex', 'steps', 'customerName', 'customerEmail', 'createdAt', 'updatedAt']) &&
         data.userId is string && data.userId.size() <= 128 &&
         data.id is string && data.id.size() <= 40 &&
         data.items is string && data.items.size() <= 500 &&
         data.total is number && data.total >= 0 &&
         data.status in ['Confirmed', 'Processing', 'In Transit', 'Out for Delivery', 'Delivered'] &&
         data.carrier is string && data.carrier.size() <= 100 &&
-        data.trackingNumber is string && data.trackingNumber.size() <= 60;
+        data.trackingNumber is string && data.trackingNumber.size() <= 60 &&
+        (!('customerName' in data) || (data.customerName is string && data.customerName.size() <= 100)) &&
+        (!('customerEmail' in data) || (data.customerEmail is string && data.customerEmail.size() <= 150));
+    }
+
+    function isValidInventory(data) {
+      return data.keys().hasAll(['id', 'name', 'stockCases', 'stockSingles', 'status']) &&
+        data.keys().hasOnly(['id', 'name', 'stockCases', 'stockSingles', 'status', 'reorderThreshold', 'updatedAt']) &&
+        data.id is string && data.id.size() <= 40 &&
+        data.name is string && data.name.size() <= 100 &&
+        data.stockCases is number && data.stockCases >= 0 &&
+        data.stockSingles is number && data.stockSingles >= 0 &&
+        data.status in ['In Stock', 'Low Stock', 'Out of Stock'];
+    }
+
+    function isValidFeedback(data) {
+      return data.keys().hasAll(['id', 'authorName', 'rating', 'flavor', 'comment']) &&
+        data.keys().hasOnly(['id', 'authorName', 'authorEmail', 'rating', 'flavor', 'comment', 'createdAt']) &&
+        data.id is string && data.id.size() <= 50 &&
+        data.authorName is string && data.authorName.size() <= 100 &&
+        data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+        data.flavor is string && data.flavor.size() <= 60 &&
+        data.comment is string && data.comment.size() > 0 && data.comment.size() <= 1000;
     }
 
     function isValidNewsletterSubscriber(data) {
@@ -66,37 +96,74 @@ service cloud.firestore {
 
     // User Profile Documents
     match /users/{userId} {
-      allow get: if isOwner(userId) && isValidId(userId);
-      allow list: if false; // Disallow querying user profiles
+      allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow list: if isAdmin();
       allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
       allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) &&
         incoming().email == existing().email &&
-        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'memberTier', 'updatedAt']);
-      allow delete: if false;
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'memberTier', 'role', 'updatedAt']);
+      allow delete: if isAdmin();
 
       // User Order Subcollection
       match /orders/{orderId} {
-        allow get: if isOwner(userId) && isValidId(userId) && isValidId(orderId);
-        allow list: if isOwner(userId) && isValidId(userId);
-        allow create: if isOwner(userId) && isValidId(userId) && isValidId(orderId) &&
-          isValidOrder(incoming()) && incoming().userId == request.auth.uid;
-        allow update: if isOwner(userId) && isValidId(userId) && isValidId(orderId) &&
-          isValidOrder(incoming()) && incoming().userId == existing().userId &&
-          incoming().diff(existing()).affectedKeys().hasOnly(['currentStepIndex', 'status', 'updatedAt', 'steps']);
-        allow delete: if false;
+        allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(orderId);
+        allow list: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+        allow create: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(orderId) &&
+          isValidOrder(incoming());
+        allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(orderId) &&
+          isValidOrder(incoming());
+        allow delete: if isAdmin();
       }
+    }
+
+    // Collection Group Query: Storewide Order Analysis & Deletion (Admin Only)
+    match /{path=**}/orders/{orderId} {
+      allow read, write, delete: if isAdmin();
+    }
+
+    // App Management & Store Settings
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(settingId);
+    }
+
+    // Inventory Collection
+    match /inventory/{productId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(productId) && isValidInventory(incoming());
+    }
+
+    // Feedback Collection
+    match /feedback/{feedbackId} {
+      allow read: if isAdmin();
+      allow create: if isValidId(feedbackId) && isValidFeedback(incoming());
+      allow update, delete: if isAdmin();
     }
 
     // Newsletter Subscriptions
     match /newsletter_subscribers/{subscriberId} {
       allow create: if isValidId(subscriberId) && isValidNewsletterSubscriber(incoming());
-      allow read, update, delete: if false;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     // Contact Inquiries
     match /contact_inquiries/{inquiryId} {
       allow create: if isValidId(inquiryId) && isValidContactInquiry(incoming());
-      allow read, update, delete: if false;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Admin role marker documents
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only configured via console or backend
+    }
+
+    // Health check / connection testing document
+    match /test/{testId} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }

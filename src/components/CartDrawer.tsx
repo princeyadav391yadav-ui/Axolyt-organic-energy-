@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, ShieldCheck, Tag, Sparkles } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, ShieldCheck, Tag, Sparkles, Lock } from 'lucide-react';
 import { CartItem } from '../types';
 import { ProductImage } from './ProductImage';
 
@@ -13,6 +13,7 @@ interface CartDrawerProps {
   appliedPromo: string | null;
   discountRate: number;
   onApplyPromo: (code: string) => boolean;
+  isLoggedIn?: boolean;
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
@@ -25,6 +26,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   appliedPromo,
   discountRate,
   onApplyPromo,
+  isLoggedIn = false,
 }) => {
   const [promoInput, setPromoInput] = useState('');
   const [promoError, setPromoError] = useState('');
@@ -248,9 +250,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               }}
               className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-emerald-950 font-extrabold text-sm transition-all shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2"
             >
-              <span>Proceed to Checkout</span>
-              <ArrowRight className="w-4 h-4" />
+              {isLoggedIn ? (
+                <>
+                  <span>Proceed to Checkout</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4 text-emerald-950" />
+                  <span>Login & Checkout</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
+
+            {!isLoggedIn && (
+              <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+                <p className="text-[11px] text-amber-300 font-medium">
+                  🔒 Order place karne ke liye login zaroori hai. Button click karte hi login portal khul jayega.
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center justify-center gap-2 text-[11px] text-emerald-200/50">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />

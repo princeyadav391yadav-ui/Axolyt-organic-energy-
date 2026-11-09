@@ -59,13 +59,13 @@ export const CleanEnergySection: React.FC<CleanEnergySectionProps> = ({ onOpenSt
               {cleanFeatures.map((feat, idx) => (
                 <div
                   key={idx}
-                  className="glass-panel p-4 rounded-2xl border border-emerald-500/20 hover:border-emerald-400/40 transition-colors flex items-start gap-4"
+                  className="group glass-panel p-4 rounded-2xl border border-emerald-500/20 hover:border-emerald-400/50 hover:bg-emerald-950/40 hover:-translate-x-1 hover:shadow-lg hover:shadow-emerald-950/50 transition-all duration-300 flex items-start gap-4 cursor-default"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-4 h-4 text-emerald-400" />
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 group-hover:bg-emerald-500/40 group-hover:scale-110 flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300">
+                    <Check className="w-4 h-4 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-base font-bold text-white">
+                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
                       {feat.title}
                     </h3>
                     <p className="text-xs text-emerald-200/70 mt-0.5 leading-relaxed">

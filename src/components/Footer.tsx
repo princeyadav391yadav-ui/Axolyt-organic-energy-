@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUp, Heart, Shield, Sparkles, X, Volume2 } from 'lucide-react';
+import { ArrowUp, Heart, Shield, Sparkles, X, Volume2, GraduationCap } from 'lucide-react';
 import { AudioAmbianceController } from './AudioAmbianceController';
 
 interface FooterProps {
@@ -7,6 +7,9 @@ interface FooterProps {
   onOpenIngredients: () => void;
   onOpenShop: () => void;
   onOpenBlog: () => void;
+  onOpenAdmin?: () => void;
+  onOpenReport?: () => void;
+  isAdmin?: boolean;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -14,6 +17,9 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenIngredients,
   onOpenShop,
   onOpenBlog,
+  onOpenAdmin,
+  onOpenReport,
+  isAdmin,
 }) => {
   const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | 'shipping' | null>(null);
 
@@ -184,6 +190,31 @@ export const Footer: React.FC<FooterProps> = ({
               <li className="text-emerald-300 font-mono text-xs">
                 hello@axolytenergy.com
               </li>
+              {onOpenReport && (
+                <li className="pt-2">
+                  <button
+                    onClick={onOpenReport}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/40 border border-emerald-400/40 text-emerald-300 hover:text-white hover:bg-emerald-800/50 text-xs font-semibold transition-all hover:scale-105"
+                  >
+                    <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Project Report (29p)</span>
+                  </button>
+                </li>
+              )}
+              {onOpenAdmin && (
+                <li className="pt-1">
+                  <button
+                    onClick={onOpenAdmin}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 hover:text-white hover:bg-emerald-900/40 text-[11px] font-mono transition-all"
+                  >
+                    <Shield className="w-3 h-3 text-emerald-400" />
+                    <span>Admin Panel</span>
+                    {isAdmin && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    )}
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
         </div>

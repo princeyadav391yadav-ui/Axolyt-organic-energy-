@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { BenefitsBar } from './components/BenefitsBar';
@@ -21,9 +21,11 @@ import { ProductDetailModal } from './components/ProductDetailModal';
 import { OurStoryModal } from './components/OurStoryModal';
 import { AuthModal } from './components/AuthModal';
 import { SearchModal } from './components/SearchModal';
+import { AdminDashboard } from './components/AdminDashboard';
+import { ProjectReportModal } from './components/ProjectReportModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { PRODUCTS } from './data/products';
-import { Product, CartItem, UserProfile, UserOrder } from './types';
+import { Product, CartItem, UserProfile, UserOrder, AppConfig } from './types';
 import { auth, db, testFirestoreConnection, handleFirestoreError, OperationType } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, onSnapshot, updateDoc } from 'firebase/firestore';
@@ -43,131 +45,24 @@ export default function App() {
   const [user, setUser] = useState<UserProfile>(() => {
     try {
       const saved = localStorage.getItem('axolyt_user');
-      return saved
-        ? JSON.parse(saved)
-        : {
-            name: 'Guest Explorer',
-            email: 'guest@axolytenergy.com',
-            isLoggedIn: false,
-            memberTier: 'Botanical Society - Silver Tier',
-            orders: [
-              {
-                id: 'AXO-948120',
-                date: 'Nov 05, 2026',
-                items: '6-Flavor Sampler 12-Pack Case',
-                total: 36.99,
-                status: 'In Transit',
-                carrier: 'EcoCold Priority Express',
-                trackingNumber: 'EC-94812048US',
-                estimatedDelivery: 'Tomorrow by 2:00 PM',
-                currentStepIndex: 2,
-                steps: [
-                  {
-                    label: 'Order Confirmed',
-                    detail: 'Payment authorized & recipes batched',
-                    time: 'Nov 05, 08:30 AM',
-                    location: 'Portland, OR',
-                    isComplete: true,
-                    isCurrent: false,
-                  },
-                  {
-                    label: 'Cold-Packed & Sealed',
-                    detail: 'Packed in biodegradable insulated mycelium chilled at 4°C',
-                    time: 'Nov 05, 11:15 AM',
-                    location: 'Cascade Range Facility, OR',
-                    isComplete: true,
-                    isCurrent: false,
-                  },
-                  {
-                    label: 'In Transit via Clean Carrier',
-                    detail: 'Departed regional logistics sorting terminal',
-                    time: 'Nov 05, 04:45 PM',
-                    location: 'Pacific Northwest Hub, OR',
-                    isComplete: true,
-                    isCurrent: true,
-                  },
-                  {
-                    label: 'Out for Delivery',
-                    detail: 'Dispatched with local electric courier',
-                    time: 'Pending',
-                    location: 'Your Local Hub',
-                    isComplete: false,
-                    isCurrent: false,
-                  },
-                  {
-                    label: 'Delivered',
-                    detail: 'Left at doorstep with verified photo',
-                    time: 'Pending',
-                    location: 'Delivery Destination',
-                    isComplete: false,
-                    isCurrent: false,
-                  },
-                ],
-              },
-              {
-                id: 'AXO-784210',
-                date: 'Oct 24, 2026',
-                items: 'Green Spring 12-Pack Case',
-                total: 36.99,
-                status: 'Delivered',
-                carrier: 'EcoCold Express',
-                trackingNumber: 'EC-78421019US',
-                estimatedDelivery: 'Delivered Oct 26',
-                currentStepIndex: 4,
-                steps: [
-                  {
-                    label: 'Order Confirmed',
-                    detail: 'Recipe batch allocated',
-                    time: 'Oct 24, 09:12 AM',
-                    location: 'Portland, OR',
-                    isComplete: true,
-                    isCurrent: false,
-                  },
-                  {
-                    label: 'Cold-Packed',
-                    detail: 'Sealed with dry cold packs',
-                    time: 'Oct 24, 01:30 PM',
-                    location: 'Cascade Range Facility, OR',
-                    isComplete: true,
-                    isCurrent: false,
-                  },
-                  {
-                    label: 'In Transit',
-                    detail: 'Passed through regional sorting',
-                    time: 'Oct 25, 08:00 AM',
-                    location: 'Transit Center',
-                    isComplete: true,
-                    isCurrent: false,
-                  },
-                  {
-                    label: 'Out for Delivery',
-                    detail: 'Loaded on courier van',
-                    time: 'Oct 26, 09:20 AM',
-                    location: 'Local Destination Hub',
-                    isComplete: true,
-                    isCurrent: false,
-                  },
-                  {
-                    label: 'Delivered & Enjoyed',
-                    detail: 'Handed directly to resident',
-                    time: 'Oct 26, 01:14 PM',
-                    location: 'Front Door',
-                    isComplete: true,
-                    isCurrent: true,
-                  },
-                ],
-              },
-            ],
-          };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          ...parsed,
+          orders: parsed.isLoggedIn ? (parsed.orders || []) : [],
+        };
+      }
     } catch {
-      return {
-        name: 'Guest Explorer',
-        email: 'guest@axolytenergy.com',
-        isLoggedIn: false,
-        memberTier: 'Botanical Society - Silver Tier',
-        orders: [],
-      };
+      // storage unavailable
     }
+    return {
+      name: 'Guest Explorer',
+      email: 'guest@axolytenergy.com',
+      isLoggedIn: false,
+      memberTier: 'Botanical Society - Silver Tier',
+      role: 'member',
+      orders: [],
+    };
   });
 
   // Save cart to localStorage
@@ -197,6 +92,10 @@ export default function App() {
         const uid = fbUser.uid;
         const userDocRef = doc(db, 'users', uid);
 
+        const isAdminEmail =
+          fbUser.email === 'princeyadav391yadav@gmail.com' ||
+          fbUser.email?.toLowerCase().includes('admin');
+
         try {
           const userSnap = await getDoc(userDocRef);
           if (!userSnap.exists()) {
@@ -204,8 +103,18 @@ export default function App() {
               name: fbUser.displayName || 'AXOLYT Member',
               email: fbUser.email || '',
               memberTier: 'Botanical Society - Gold Member',
+              role: isAdminEmail ? 'admin' : 'member',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
+            });
+            setUser({
+              uid,
+              name: fbUser.displayName || 'AXOLYT Member',
+              email: fbUser.email || '',
+              role: isAdminEmail ? 'admin' : 'member',
+              memberTier: 'Botanical Society - Gold Member',
+              isLoggedIn: true,
+              orders: [],
             });
           } else {
             const data = userSnap.data();
@@ -215,14 +124,24 @@ export default function App() {
               name: data.name || prev.name,
               email: data.email || prev.email,
               memberTier: data.memberTier || prev.memberTier,
+              role: isAdminEmail ? 'admin' : (data.role || 'member'),
               isLoggedIn: true,
+              orders: [],
             }));
           }
         } catch (err) {
           handleFirestoreError(err, OperationType.GET, `users/${uid}`);
         }
 
-        // Attach Realtime Listener for Orders
+        // If checkout was initiated before login, auto-open checkout now
+        if (pendingCheckoutRef.current) {
+          pendingCheckoutRef.current = false;
+          setIsPendingCheckout(false);
+          setIsAuthOpen(false);
+          setIsCheckoutOpen(true);
+        }
+
+        // Attach Realtime Listener for THIS user's personal orders
         const ordersCol = collection(db, 'users', uid, 'orders');
         const unsubscribeOrders = onSnapshot(
           ordersCol,
@@ -231,12 +150,10 @@ export default function App() {
             snapshot.forEach((d) => {
               cloudOrders.push(d.data() as UserOrder);
             });
-            if (cloudOrders.length > 0) {
-              setUser((prev) => ({
-                ...prev,
-                orders: cloudOrders,
-              }));
-            }
+            setUser((prev) => ({
+              ...prev,
+              orders: cloudOrders,
+            }));
           },
           (err) => {
             handleFirestoreError(err, OperationType.GET, `users/${uid}/orders`);
@@ -247,11 +164,14 @@ export default function App() {
           unsubscribeOrders();
         };
       } else {
-        setUser((prev) => ({
-          ...prev,
-          uid: undefined,
+        setUser({
+          name: 'Guest Explorer',
+          email: 'guest@axolytenergy.com',
           isLoggedIn: false,
-        }));
+          role: 'member',
+          memberTier: 'Botanical Society - Silver Tier',
+          orders: [],
+        });
       }
     });
 
@@ -264,13 +184,36 @@ export default function App() {
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [discountRate, setDiscountRate] = useState<number>(0);
 
+  // 3b. App Configuration & Settings (Managed by Admin)
+  const [appConfig, setAppConfig] = useState<AppConfig>({
+    storeStatus: 'open',
+    announcementBanner: '🌿 Free 2-Day Priority Cold-Pack Shipping on orders over $40 · Code: PUREENERGY for 15% OFF',
+    promoCode: 'PUREENERGY',
+    discountPercent: 15,
+  });
+
+  useEffect(() => {
+    const unsubConfig = onSnapshot(doc(db, 'settings', 'app_config'), (snap) => {
+      if (snap.exists()) {
+        setAppConfig(snap.data() as AppConfig);
+      }
+    });
+    return () => unsubConfig();
+  }, []);
+
   // 4. Modal Visibility Controls
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isStoryOpen, setIsStoryOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [selectedProductDetail, setSelectedProductDetail] = useState<Product | null>(null);
+
+  // Pending checkout gate: when guest clicks checkout, hold state until authentication completes
+  const pendingCheckoutRef = useRef(false);
+  const [isPendingCheckout, setIsPendingCheckout] = useState(false);
 
   // 5. Global Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -347,6 +290,13 @@ export default function App() {
 
   const handleApplyPromo = (code: string): boolean => {
     const normalized = code.trim().toUpperCase();
+    if (appConfig.promoCode && normalized === appConfig.promoCode.toUpperCase()) {
+      const rate = (appConfig.discountPercent || 15) / 100;
+      setAppliedPromo(normalized);
+      setDiscountRate(rate);
+      addToast('success', 'Promo Code Applied!', `${appConfig.discountPercent}% discount applied to your order.`);
+      return true;
+    }
     if (normalized === 'NATURE15' || normalized === 'ORGANIC15') {
       setAppliedPromo(normalized);
       setDiscountRate(0.15);
@@ -356,12 +306,33 @@ export default function App() {
     return false;
   };
 
-  const handleOrderSuccess = (orderId: string) => {
+  const handleProceedToCheckout = () => {
+    if (!user.isLoggedIn) {
+      setIsCartOpen(false);
+      pendingCheckoutRef.current = true;
+      setIsPendingCheckout(true);
+      setIsAuthOpen(true);
+      addToast(
+        'info',
+        'Login Required to Order',
+        'Bina login kiye order nahi liya jata. Kripya pehle account sign in ya register karein. Login karte hi checkout portal khul jayega!'
+      );
+    } else {
+      setIsCheckoutOpen(true);
+    }
+  };
+
+  const handleOrderSuccess = (orderId: string, customerData?: { name: string; email: string }) => {
     const orderItemsSummary = cart.map((c) => `${c.quantity}x ${c.name} (${c.packType === 'pack12' ? '12-Pack' : 'Single'})`).join(', ');
     const orderTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+    const customerName = customerData?.name || user.name || 'AXOLYT Member';
+    const customerEmail = customerData?.email || user.email || 'customer@axolytenergy.com';
 
     const newOrder: UserOrder = {
       id: orderId,
+      userId: auth.currentUser?.uid,
+      customerName,
+      customerEmail,
       date: 'Just now',
       items: orderItemsSummary || 'AXOLYT Organic Energy Cans',
       total: orderTotal,
@@ -425,6 +396,8 @@ export default function App() {
       const orderRef = doc(db, 'users', auth.currentUser.uid, 'orders', orderId);
       setDoc(orderRef, {
         userId: auth.currentUser.uid,
+        customerName,
+        customerEmail,
         id: newOrder.id,
         date: newOrder.date,
         items: newOrder.items,
@@ -504,24 +477,44 @@ export default function App() {
   };
 
   const handleLogin = (name: string, email: string) => {
+    const isAdminEmail =
+      email === 'princeyadav391yadav@gmail.com' ||
+      email.toLowerCase().includes('admin');
+
     setUser((prev) => ({
       ...prev,
       name,
       email,
+      role: isAdminEmail ? 'admin' : (prev.role || 'member'),
       isLoggedIn: true,
     }));
     addToast('success', `Welcome, ${name}!`, 'You are now signed in to your AXOLYT account.');
+
+    if (pendingCheckoutRef.current) {
+      pendingCheckoutRef.current = false;
+      setIsPendingCheckout(false);
+      setIsCheckoutOpen(true);
+      addToast('info', 'Proceeding to Checkout', 'Aap login ho gaye hain! Ab apna order complete karein.');
+    }
   };
 
   const handleLogout = () => {
-    setUser((prev) => ({
-      ...prev,
+    setUser({
       name: 'Guest Explorer',
       email: 'guest@axolytenergy.com',
+      role: 'member',
       isLoggedIn: false,
-    }));
+      memberTier: 'Botanical Society - Silver Tier',
+      orders: [],
+    });
+    try {
+      localStorage.removeItem('axolyt_user');
+    } catch {
+      // storage unavailable
+    }
     setIsAuthOpen(false);
-    addToast('info', 'Signed Out', 'You have been logged out of your account.');
+    setIsAdminOpen(false);
+    addToast('info', 'Signed Out', 'Aap apne account se safaltapoorvak sign out ho gaye hain.');
   };
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -535,8 +528,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#051109] text-emerald-50 relative selection:bg-emerald-500 selection:text-black">
-      {/* Toast Notification Container */}
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      {/* Real-time Global Announcement Bar (Managed by Admin) */}
+      {appConfig.announcementBanner && (
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 border-b border-emerald-500/20 py-1.5 px-4 text-center text-xs font-semibold text-emerald-200 flex items-center justify-center gap-2 relative z-40">
+          {appConfig.storeStatus === 'sale' && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-400 text-emerald-950 text-[10px] font-bold uppercase tracking-wider animate-pulse">
+              Flash Sale
+            </span>
+          )}
+          {appConfig.storeStatus === 'maintenance' && (
+            <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider">
+              Maintenance Notice
+            </span>
+          )}
+          <span className="truncate">{appConfig.announcementBanner}</span>
+        </div>
+      )}
 
       {/* Sticky Top Navigation */}
       <Navbar
@@ -545,6 +552,8 @@ export default function App() {
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenStory={() => setIsStoryOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenReport={() => setIsReportOpen(true)}
         user={user}
       />
 
@@ -601,6 +610,9 @@ export default function App() {
         onOpenIngredients={() => scrollToSection('ingredients')}
         onOpenShop={() => scrollToSection('shop')}
         onOpenBlog={() => scrollToSection('blog')}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenReport={() => setIsReportOpen(true)}
+        isAdmin={user.role === 'admin' || user.email === 'princeyadav391yadav@gmail.com'}
       />
 
       {/* Slide-over Shopping Cart Drawer */}
@@ -610,10 +622,11 @@ export default function App() {
         items={cart}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
-        onProceedToCheckout={() => setIsCheckoutOpen(true)}
+        onProceedToCheckout={handleProceedToCheckout}
         appliedPromo={appliedPromo}
         discountRate={discountRate}
         onApplyPromo={handleApplyPromo}
+        isLoggedIn={user.isLoggedIn}
       />
 
       {/* Express Checkout Modal */}
@@ -623,6 +636,13 @@ export default function App() {
         items={cart}
         discountRate={discountRate}
         onOrderSuccess={handleOrderSuccess}
+        user={user}
+        onRequireLogin={() => {
+          setIsCheckoutOpen(false);
+          pendingCheckoutRef.current = true;
+          setIsPendingCheckout(true);
+          setIsAuthOpen(true);
+        }}
       />
 
       {/* Product Detail Modal */}
@@ -641,11 +661,17 @@ export default function App() {
       {/* User Account / Auth Modal & Order Tracker */}
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={() => {
+          setIsAuthOpen(false);
+          setIsPendingCheckout(false);
+          pendingCheckoutRef.current = false;
+        }}
         user={user}
         onLogin={handleLogin}
         onLogout={handleLogout}
         onSimulateNextStep={handleSimulateNextStep}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+        isPendingCheckout={isPendingCheckout}
       />
 
       {/* Instant Search Modal */}
@@ -655,6 +681,42 @@ export default function App() {
         onSelectProduct={(p) => setSelectedProductDetail(p)}
         onOpenIngredients={() => scrollToSection('ingredients')}
         onOpenBlog={() => scrollToSection('blog')}
+      />
+
+      {/* Admin Dashboard Command Center */}
+      <AdminDashboard
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        user={user}
+        orders={user.orders}
+        onNotify={addToast}
+        onAdminAuthenticated={(adminProfile) => {
+          setUser((prev) => ({
+            ...prev,
+            name: adminProfile.name,
+            email: adminProfile.email,
+            role: 'admin',
+            isLoggedIn: true,
+          }));
+        }}
+        onOrderAdded={(newOrder) => {
+          setUser((prev) => ({
+            ...prev,
+            orders: [newOrder, ...prev.orders],
+          }));
+        }}
+        onOrderDeleted={(orderId) => {
+          setUser((prev) => ({
+            ...prev,
+            orders: prev.orders.filter((o) => o.id !== orderId),
+          }));
+        }}
+      />
+
+      {/* College Project Report Modal (PDF / DOCX Download & Verification) */}
+      <ProjectReportModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
       />
     </div>
   );

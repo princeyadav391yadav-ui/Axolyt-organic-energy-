@@ -21,6 +21,11 @@
           "description": "Botanical society loyalty membership tier",
           "maxLength": 60
         },
+        "role": {
+          "type": "string",
+          "description": "Access control role (e.g. admin or member)",
+          "enum": ["admin", "member"]
+        },
         "createdAt": {
           "type": "string",
           "description": "ISO timestamp of profile creation"
@@ -85,6 +90,16 @@
           "type": "number",
           "description": "Current progress index in the delivery pipeline (0 to 4)"
         },
+        "customerName": {
+          "type": "string",
+          "description": "Customer display name",
+          "maxLength": 100
+        },
+        "customerEmail": {
+          "type": "string",
+          "description": "Customer contact email",
+          "maxLength": 150
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp when order was submitted"
@@ -95,6 +110,87 @@
         }
       },
       "required": ["userId", "id", "items", "total", "status", "carrier", "trackingNumber"]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Real-time stock levels and warehouse allocations for each drink flavor",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Product ID matching flavor identifier",
+          "maxLength": 40
+        },
+        "name": {
+          "type": "string",
+          "description": "Flavor display name",
+          "maxLength": 100
+        },
+        "stockCases": {
+          "type": "number",
+          "description": "Available stock in 12-pack cases"
+        },
+        "stockSingles": {
+          "type": "number",
+          "description": "Available individual cans stock"
+        },
+        "status": {
+          "type": "string",
+          "description": "Inventory health classification",
+          "enum": ["In Stock", "Low Stock", "Out of Stock"]
+        },
+        "reorderThreshold": {
+          "type": "number",
+          "description": "Minimum case threshold before reorder notification triggers"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of inventory update"
+        }
+      },
+      "required": ["id", "name", "stockCases", "stockSingles", "status"]
+    },
+    "FeedbackItem": {
+      "title": "FeedbackItem",
+      "description": "Customer taste reviews and sensory ratings submitted across flavors",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique feedback ID",
+          "maxLength": 50
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Customer reviewer name",
+          "maxLength": 100
+        },
+        "authorEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Customer email",
+          "maxLength": 150
+        },
+        "rating": {
+          "type": "number",
+          "description": "Rating score from 1 to 5 stars"
+        },
+        "flavor": {
+          "type": "string",
+          "description": "Reviewed flavor",
+          "maxLength": 60
+        },
+        "comment": {
+          "type": "string",
+          "description": "User feedback commentary",
+          "maxLength": 1000
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of feedback submission"
+        }
+      },
+      "required": ["id", "authorName", "rating", "flavor", "comment"]
     },
     "NewsletterSubscriber": {
       "title": "NewsletterSubscriber",
@@ -146,6 +242,37 @@
         }
       },
       "required": ["name", "email", "message"]
+    },
+    "AppConfig": {
+      "title": "AppConfig",
+      "description": "Store operational settings, announcement banners, and promo controls managed by Admin",
+      "type": "object",
+      "properties": {
+        "storeStatus": {
+          "type": "string",
+          "description": "Store live operational status",
+          "enum": ["open", "sale", "maintenance"]
+        },
+        "announcementBanner": {
+          "type": "string",
+          "description": "Global promotional announcement banner text",
+          "maxLength": 300
+        },
+        "promoCode": {
+          "type": "string",
+          "description": "Active promotional coupon code",
+          "maxLength": 30
+        },
+        "discountPercent": {
+          "type": "number",
+          "description": "Storewide discount percentage applied by promo"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last settings update"
+        }
+      },
+      "required": ["storeStatus", "announcementBanner", "promoCode", "discountPercent"]
     }
   },
   "firestore": {
@@ -157,6 +284,14 @@
       "schema": "Order",
       "description": "User order records with real-time tracking progress"
     },
+    "/inventory/{productId}": {
+      "schema": "InventoryItem",
+      "description": "Real-time inventory levels for product line"
+    },
+    "/feedback/{feedbackId}": {
+      "schema": "FeedbackItem",
+      "description": "Customer taste ratings and product feedback"
+    },
     "/newsletter_subscribers/{subscriberId}": {
       "schema": "NewsletterSubscriber",
       "description": "Email list subscriptions with public create access"
@@ -164,6 +299,10 @@
     "/contact_inquiries/{inquiryId}": {
       "schema": "ContactInquiry",
       "description": "Contact form submissions"
+    },
+    "/settings/{settingId}": {
+      "schema": "AppConfig",
+      "description": "Operational app configuration and storewide announcements"
     }
   }
 }

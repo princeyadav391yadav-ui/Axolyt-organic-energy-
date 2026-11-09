@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { X, CheckCircle2, ShieldCheck, CreditCard, Truck, ArrowLeft, PackageCheck } from 'lucide-react';
-import { CartItem } from '../types';
+import React, { useState, useEffect } from 'react';
+import { X, CheckCircle2, ShieldCheck, CreditCard, Truck, ArrowLeft, PackageCheck, Lock, User, LogIn } from 'lucide-react';
+import { CartItem, UserProfile } from '../types';
 import { ProductImage } from './ProductImage';
 
 interface CheckoutModalProps {
@@ -8,7 +8,9 @@ interface CheckoutModalProps {
   onClose: () => void;
   items: CartItem[];
   discountRate: number;
-  onOrderSuccess: (orderId: string) => void;
+  onOrderSuccess: (orderId: string, customerData?: { name: string; email: string }) => void;
+  user: UserProfile;
+  onRequireLogin: () => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -17,6 +19,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   items,
   discountRate,
   onOrderSuccess,
+  user,
+  onRequireLogin,
 }) => {
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [orderId, setOrderId] = useState('');
@@ -40,7 +44,79 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  // Auto-populate from logged-in user profile
+  useEffect(() => {
+    if (user.isLoggedIn) {
+      const parts = (user.name || '').trim().split(' ');
+      const fName = parts[0] || '';
+      const lName = parts.slice(1).join(' ') || '';
+      setFormData((prev) => ({
+        ...prev,
+        firstName: prev.firstName || fName,
+        lastName: prev.lastName || lName,
+        email: prev.email || (user.email && !user.email.includes('guest') ? user.email : ''),
+      }));
+    }
+  }, [user]);
+
   if (!isOpen) return null;
+
+  // Strict enforcement: Unauthenticated users CANNOT proceed to checkout or submit order
+  if (!user.isLoggedIn) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+        <div
+          className="relative w-full max-w-md glass-panel-elevated rounded-3xl border border-amber-500/30 shadow-2xl p-6 sm:p-8 text-center space-y-6"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+            <Lock className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+              <span>Authentication Required</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-display font-extrabold text-white">
+              Bina Login Kiye Order Nahi Hoga
+            </h3>
+            <p className="text-emerald-200/80 text-xs sm:text-sm leading-relaxed">
+              Order place karne ke liye pehle apna account sign in ya register karein. Isse aapka order aapke private tracking dashboard me secure rahega.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-xs text-emerald-300/80 text-left space-y-1.5">
+            <div className="font-semibold text-emerald-200 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              Member Benefits on Login:
+            </div>
+            <p>• Live real-time shipping step tracker aapke account me judega.</p>
+            <p>• Verified botanical carbon-neutral receipt email hogi.</p>
+            <p>• Har order customer dashboard me alag aur private rahega.</p>
+          </div>
+
+          <div className="flex flex-col gap-2.5 pt-2">
+            <button
+              onClick={() => {
+                onClose();
+                onRequireLogin();
+              }}
+              className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-emerald-950 font-extrabold text-sm transition-all shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Login / Register Now to Complete Order</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 px-4 rounded-xl text-emerald-300 hover:text-white hover:bg-emerald-950/50 text-xs font-semibold transition-colors"
+            >
+              Cancel & Return to Cart
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const discountAmount = subtotal * discountRate;
@@ -81,7 +157,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setOrderId(generatedId);
       setIsSubmitting(false);
       setStep('success');
-      onOrderSuccess(generatedId);
+      onOrderSuccess(generatedId, {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email.trim(),
+      });
     }, 1000);
   };
 
@@ -166,6 +245,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Form Column */}
             <form onSubmit={handleSubmitOrder} className="lg:col-span-7 space-y-6">
+              {/* Logged in User Status Banner */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-xs">
+                <div className="flex items-center gap-2 truncate">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                  <span className="text-emerald-200 truncate">
+                    Logged in as: <strong className="text-white">{user.name}</strong> ({user.email})
+                  </span>
+                </div>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 shrink-0">
+                  Verified Member
+                </span>
+              </div>
+
               {/* Customer Contact */}
               <div className="space-y-3">
                 <h4 className="text-xs uppercase tracking-wider text-emerald-400 font-bold">
