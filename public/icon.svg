@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGrad" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#0a3b24" />
+      <stop offset="60%" stop-color="#051c11" />
+      <stop offset="100%" stop-color="#030b06" />
+    </radialGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="goldBolt" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#10b981" stroke-opacity="0.25" stroke-width="4" />
+  <!-- Organic Leaf Drop Silhouette -->
+  <path d="M256 96 C340 164, 384 236, 384 304 C384 374, 326 420, 256 420 C186 420, 128 374, 128 304 C128 236, 172 164, 256 96 Z" fill="url(#emeraldGrad)" />
+  <!-- Energy Lightning Core -->
+  <path d="M276 172 L206 274 L256 274 L236 356 L308 248 L258 248 Z" fill="#031209" />
+  <path d="M272 184 L214 268 L258 268 L242 340 L298 254 L254 254 Z" fill="url(#goldBolt)" opacity="0.92" />
+</svg>

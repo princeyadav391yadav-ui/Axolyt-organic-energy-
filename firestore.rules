@@ -104,21 +104,28 @@ service cloud.firestore {
         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'memberTier', 'role', 'updatedAt']);
       allow delete: if isAdmin();
 
-      // User Order Subcollection
+      // User Order Subcollection (Read-only for Admin, Customer creation only, Deletion disabled)
       match /orders/{orderId} {
         allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(orderId);
         allow list: if (isOwner(userId) || isAdmin()) && isValidId(userId);
-        allow create: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(orderId) &&
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(orderId) &&
           isValidOrder(incoming());
-        allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(orderId) &&
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(orderId) &&
           isValidOrder(incoming());
-        allow delete: if isAdmin();
+        allow delete: if false; // Order deletion disabled - orders are preserved for consumer audit
       }
     }
 
-    // Collection Group Query: Storewide Order Analysis & Deletion (Admin Only)
+    // Collection Group Query: Storewide Order Analysis (Read-Only for Admin, NO Deletion / Tampering)
     match /{path=**}/orders/{orderId} {
-      allow read, write, delete: if isAdmin();
+      allow read: if isAdmin();
+      allow write, delete: if false;
+    }
+
+    // Products Collection (Public Read, Admin Can Add & Remove Products)
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     // App Management & Store Settings

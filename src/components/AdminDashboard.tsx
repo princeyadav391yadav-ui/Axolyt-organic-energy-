@@ -37,7 +37,7 @@ import {
   Radio,
   Sliders,
 } from 'lucide-react';
-import { UserProfile, UserOrder, InventoryItem, FeedbackItem, AdminCustomerRecord, AppConfig } from '../types';
+import { UserProfile, UserOrder, InventoryItem, FeedbackItem, AdminCustomerRecord, AppConfig, Product } from '../types';
 import { PRODUCTS } from '../data/products';
 import {
   db,
@@ -55,8 +55,6 @@ import {
   onSnapshot,
   doc,
   setDoc,
-  deleteDoc,
-  updateDoc,
   collectionGroup,
   getDocs,
 } from 'firebase/firestore';
@@ -66,10 +64,11 @@ interface AdminDashboardProps {
   onClose: () => void;
   user: UserProfile;
   orders: UserOrder[];
+  products: Product[];
+  onAddProduct: (product: Product) => void;
+  onRemoveProduct: (productId: string) => void;
   onNotify?: (type: 'success' | 'info' | 'warning', title: string, message?: string) => void;
   onAdminAuthenticated?: (adminProfile: { name: string; email: string }) => void;
-  onOrderAdded?: (newOrder: UserOrder) => void;
-  onOrderDeleted?: (orderId: string) => void;
 }
 
 const INITIAL_INVENTORY: InventoryItem[] = [
@@ -220,12 +219,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onClose,
   user,
   orders,
+  products,
+  onAddProduct,
+  onRemoveProduct,
   onNotify,
   onAdminAuthenticated,
-  onOrderAdded,
-  onOrderDeleted,
 }) => {
-  const [activeTab, setActiveTab] = useState<'sales' | 'customers' | 'inventory' | 'feedback' | 'settings' | 'gdocs'>('sales');
+  const [activeTab, setActiveTab] = useState<'products' | 'sales' | 'settings' | 'customers' | 'inventory' | 'feedback' | 'gdocs'>('products');
   const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
   const [feedback, setFeedback] = useState<FeedbackItem[]>(INITIAL_FEEDBACK);
   const [customers, setCustomers] = useState<AdminCustomerRecord[]>(INITIAL_CUSTOMERS);
@@ -250,17 +250,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [adminAuthLoading, setAdminAuthLoading] = useState(false);
   const [adminAuthError, setAdminAuthError] = useState('');
 
-  // Order Management Modals
-  const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
-  const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<UserOrder | null>(null);
+  // Product Management State (Admin Power)
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [deleteConfirmProduct, setDeleteConfirmProduct] = useState<Product | null>(null);
 
-  // New Order Form Fields
-  const [newOrderCustomerName, setNewOrderCustomerName] = useState('');
-  const [newOrderCustomerEmail, setNewOrderCustomerEmail] = useState('');
-  const [newOrderItems, setNewOrderItems] = useState('Green Spring 12-Pack Case');
-  const [newOrderTotal, setNewOrderTotal] = useState('36.99');
-  const [newOrderStatus, setNewOrderStatus] = useState<UserOrder['status']>('Confirmed');
-  const [newOrderCarrier, setNewOrderCarrier] = useState('EcoCold Priority Express');
+  // New Product Form State
+  const [newProdName, setNewProdName] = useState('');
+  const [newProdTagline, setNewProdTagline] = useState('');
+  const [newProdBadge, setNewProdBadge] = useState('New Release');
+  const [newProdPriceSingle, setNewProdPriceSingle] = useState('3.49');
+  const [newProdPricePack12, setNewProdPricePack12] = useState('36.99');
+  const [newProdCaffeine, setNewProdCaffeine] = useState('120');
+  const [newProdCalories, setNewProdCalories] = useState('15');
+  const [newProdSugar, setNewProdSugar] = useState('2');
+  const [newProdColorScheme, setNewProdColorScheme] = useState<'emerald' | 'purple' | 'amber' | 'cyan' | 'ruby' | 'gold'>('emerald');
+  const [newProdFlavorNotes, setNewProdFlavorNotes] = useState('Crisp Fuji Apple, Ceremonial Matcha, Garden Mint');
+  const [newProdKeyBotanicals, setNewProdKeyBotanicals] = useState('Organic Ceremonial Matcha, Ashwagandha KSM-66, L-Theanine');
+  const [newProdDescription, setNewProdDescription] = useState('Crafted from wild botanicals, raw ceremonial grade matcha, and organic adaptogens.');
+  const [newProdImage, setNewProdImage] = useState('/images/can_green_spring.jpg');
 
   // Authorized Admin check
   const isAdmin =
@@ -418,170 +425,75 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // --- ADMIN POWER 1: CREATE NEW ORDER ---
-  const handleCreateNewOrder = async (e: React.FormEvent) => {
+  // --- ADMIN POWER: ADD NEW PRODUCT TO CATALOG ---
+  const handleCreateProductSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const orderNumber = Math.floor(100000 + Math.random() * 900000);
-    const orderId = `AXO-${orderNumber}`;
-    const targetUserId = user.uid || 'usr-admin-01';
-
-    const statusStepMap: Record<UserOrder['status'], number> = {
-      Confirmed: 0,
-      Processing: 1,
-      'In Transit': 2,
-      'Out for Delivery': 3,
-      Delivered: 4,
-    };
-    const stepIdx = statusStepMap[newOrderStatus];
-
-    const newOrder: UserOrder = {
-      id: orderId,
-      userId: targetUserId,
-      customerName: newOrderCustomerName.trim() || 'Direct Customer',
-      customerEmail: newOrderCustomerEmail.trim() || user.email,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      items: newOrderItems.trim(),
-      total: parseFloat(newOrderTotal) || 36.99,
-      status: newOrderStatus,
-      carrier: newOrderCarrier,
-      trackingNumber: `EC-${Math.floor(10000000 + Math.random() * 90000000)}US`,
-      estimatedDelivery: '2 Business Days (Cold-Pack)',
-      currentStepIndex: stepIdx,
-      steps: [
-        {
-          label: 'Order Confirmed',
-          detail: 'Batch allocated & recipes batched',
-          time: 'Just now',
-          location: 'Cascade Facility, OR',
-          isComplete: stepIdx >= 0,
-          isCurrent: stepIdx === 0,
-        },
-        {
-          label: 'Cold-Packed & Sealed',
-          detail: 'Packed in biodegradable mycelium at 4°C',
-          time: stepIdx >= 1 ? 'Batch Complete' : 'Pending',
-          location: 'Cascade Facility, OR',
-          isComplete: stepIdx >= 1,
-          isCurrent: stepIdx === 1,
-        },
-        {
-          label: 'In Transit',
-          detail: 'Departed regional sorting hub',
-          time: stepIdx >= 2 ? 'In Transit' : 'Pending',
-          location: 'Logistics Terminal, OR',
-          isComplete: stepIdx >= 2,
-          isCurrent: stepIdx === 2,
-        },
-        {
-          label: 'Out for Delivery',
-          detail: 'Loaded on local electric courier',
-          time: stepIdx >= 3 ? 'En Route' : 'Pending',
-          location: 'Destination Hub',
-          isComplete: stepIdx >= 3,
-          isCurrent: stepIdx === 3,
-        },
-        {
-          label: 'Delivered',
-          detail: 'Handed directly to resident',
-          time: stepIdx === 4 ? 'Delivered' : 'Pending',
-          location: 'Front Door',
-          isComplete: stepIdx === 4,
-          isCurrent: stepIdx === 4,
-        },
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Save to local state
-    setAllOrders((prev) => [newOrder, ...prev]);
-
-    // Save to Firestore under user subcollection
-    try {
-      await setDoc(doc(db, 'users', targetUserId, 'orders', orderId), newOrder);
-    } catch (err) {
-      console.warn('Firestore order creation notice:', err);
+    if (!newProdName.trim()) {
+      if (onNotify) onNotify('warning', 'Product Name Required', 'Kripya product ka naam dalein.');
+      return;
     }
 
-    if (onOrderAdded) {
-      onOrderAdded(newOrder);
-    }
+    const slug = newProdName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const newId = `${slug}-${Math.floor(100 + Math.random() * 900)}`;
 
-    setIsCreateOrderOpen(false);
-    setNewOrderCustomerName('');
-    setNewOrderCustomerEmail('');
+    const newProduct: Product = {
+      id: newId,
+      name: newProdName.trim(),
+      tagline: newProdTagline.trim() || 'Botanical Vitality',
+      colorScheme: newProdColorScheme,
+      accentColor:
+        newProdColorScheme === 'emerald' ? '#10b981' :
+        newProdColorScheme === 'purple' ? '#a855f7' :
+        newProdColorScheme === 'amber' ? '#f59e0b' :
+        newProdColorScheme === 'cyan' ? '#06b6d4' :
+        newProdColorScheme === 'ruby' ? '#f43f5e' : '#eab308',
+      gradientBg: `from-${newProdColorScheme}-950/70 via-${newProdColorScheme}-900/30 to-black/80`,
+      badge: newProdBadge.trim() || 'New Release',
+      priceSingle: parseFloat(newProdPriceSingle) || 3.49,
+      pricePack12: parseFloat(newProdPricePack12) || 36.99,
+      image: newProdImage || '/images/can_green_spring.jpg',
+      description: newProdDescription.trim(),
+      longDescription: newProdDescription.trim(),
+      caffeineMg: parseInt(newProdCaffeine, 10) || 120,
+      calories: parseInt(newProdCalories, 10) || 15,
+      sugarG: parseInt(newProdSugar, 10) || 2,
+      volumeMl: 355,
+      flavorNotes: newProdFlavorNotes.split(',').map((s) => s.trim()).filter(Boolean),
+      keyBotanicals: newProdKeyBotanicals.split(',').map((s) => s.trim()).filter(Boolean),
+      nutritionFacts: {
+        servingSize: '1 Can (355ml)',
+        calories: parseInt(newProdCalories, 10) || 15,
+        totalCarbs: '3g',
+        totalSugars: `${newProdSugar}g`,
+        vitaminB6: '100% DV',
+        vitaminB12: '150% DV',
+        vitaminC: '100% DV',
+        potassium: '180mg',
+        magnesium: '45mg',
+        lTheanine: '100mg',
+      },
+      reviewsCount: 1,
+      rating: 5.0,
+    };
+
+    onAddProduct(newProduct);
+    setIsAddProductOpen(false);
+    setNewProdName('');
+    setNewProdTagline('');
     if (onNotify) {
-      onNotify('success', 'Order Created!', `Order #${orderId} was added to the store system.`);
+      onNotify('success', 'Product Added!', `${newProduct.name} is now live in the store!`);
     }
   };
 
-  // --- ADMIN POWER 2: REMOVE / DELETE ORDER ---
-  const handleExecuteDeleteOrder = async () => {
-    if (!deleteConfirmOrder) return;
-    const targetId = deleteConfirmOrder.id;
-    const targetUser = deleteConfirmOrder.userId || user.uid || 'usr-admin-01';
-
-    // Remove from local state
-    setAllOrders((prev) => prev.filter((o) => o.id !== targetId));
-
-    // Remove from Firestore
-    try {
-      await deleteDoc(doc(db, 'users', targetUser, 'orders', targetId));
-    } catch (err) {
-      console.warn('Firestore order deletion notice:', err);
-    }
-
-    if (onOrderDeleted) {
-      onOrderDeleted(targetId);
-    }
-
-    setDeleteConfirmOrder(null);
+  // --- ADMIN POWER: REMOVE PRODUCT FROM CATALOG ---
+  const handleExecuteRemoveProduct = () => {
+    if (!deleteConfirmProduct) return;
+    const targetId = deleteConfirmProduct.id;
+    const targetName = deleteConfirmProduct.name;
+    onRemoveProduct(targetId);
+    setDeleteConfirmProduct(null);
     if (onNotify) {
-      onNotify('info', 'Order Deleted', `Order #${targetId} was permanently deleted.`);
-    }
-  };
-
-  // --- ADMIN POWER 3: UPDATE ORDER STATUS ON THE FLY ---
-  const handleUpdateOrderStatus = async (order: UserOrder, newStatus: UserOrder['status']) => {
-    const statusStepMap: Record<UserOrder['status'], number> = {
-      Confirmed: 0,
-      Processing: 1,
-      'In Transit': 2,
-      'Out for Delivery': 3,
-      Delivered: 4,
-    };
-    const nextIdx = statusStepMap[newStatus];
-
-    const updatedSteps = order.steps.map((st, i) => ({
-      ...st,
-      isComplete: i <= nextIdx,
-      isCurrent: i === nextIdx,
-    }));
-
-    const updatedOrder: UserOrder = {
-      ...order,
-      status: newStatus,
-      currentStepIndex: nextIdx,
-      steps: updatedSteps,
-      updatedAt: new Date().toISOString(),
-    };
-
-    setAllOrders((prev) => prev.map((o) => (o.id === order.id ? updatedOrder : o)));
-
-    const targetUser = order.userId || user.uid || 'usr-admin-01';
-    try {
-      await updateDoc(doc(db, 'users', targetUser, 'orders', order.id), {
-        status: newStatus,
-        currentStepIndex: nextIdx,
-        steps: updatedSteps,
-        updatedAt: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn('Firestore order status update notice:', err);
-    }
-
-    if (onNotify) {
-      onNotify('info', 'Status Updated', `Order #${order.id} is now ${newStatus}.`);
+      onNotify('info', 'Product Removed', `${targetName} was removed from the store catalog.`);
     }
   };
 
@@ -882,17 +794,17 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
               AXOLYT Operations &amp; App Control
             </h2>
             <p className="text-xs text-emerald-200/70">
-              Manage store orders (add/remove), customer accounts, warehouse inventory, live announcements &amp; Google Docs export.
+              Manage store products (add/remove flavors), warehouse inventory, customer accounts, live announcements &amp; read-only order analytics.
             </p>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <button
-              onClick={() => setIsCreateOrderOpen(true)}
+              onClick={() => setIsAddProductOpen(true)}
               className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/25 transition-all"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>Add Order</span>
+              <span>Add Product</span>
             </button>
 
             <button
@@ -944,6 +856,17 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
         {/* Navigation Tabs */}
         <div className="flex gap-2 p-1 my-6 bg-emerald-950/60 rounded-xl border border-emerald-500/20 text-xs font-semibold overflow-x-auto">
           <button
+            onClick={() => setActiveTab('products')}
+            className={`py-2 px-4 rounded-lg flex items-center gap-2 whitespace-nowrap transition-all ${
+              activeTab === 'products'
+                ? 'bg-emerald-500 text-emerald-950 font-bold shadow-sm'
+                : 'text-emerald-200/70 hover:text-white'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Products Catalog ({products.length})</span>
+          </button>
+          <button
             onClick={() => setActiveTab('sales')}
             className={`py-2 px-4 rounded-lg flex items-center gap-2 whitespace-nowrap transition-all ${
               activeTab === 'sales'
@@ -952,7 +875,7 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>Orders Management ({allOrders.length})</span>
+            <span>Orders Overview ({allOrders.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -1016,7 +939,79 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
           </button>
         </div>
 
-        {/* TAB 1: Orders Management (Add, Remove, Edit Status, Filter) */}
+        {/* TAB 0: Products Catalog Management (Add & Remove Products) */}
+        {activeTab === 'products' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold font-display text-white">
+                  Store Products Catalog ({products.length} Active Flavors)
+                </h3>
+                <p className="text-xs text-emerald-200/70">
+                  Add new organic flavors or remove existing products from the live storefront.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsAddProductOpen(true)}
+                className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all self-start sm:self-auto"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add New Product</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {products.map((prod) => (
+                <div
+                  key={prod.id}
+                  className="glass-panel p-5 rounded-2xl border border-emerald-500/20 hover:border-emerald-400/40 transition-all flex flex-col justify-between gap-4"
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-16 h-20 rounded-xl overflow-hidden bg-black/50 border border-emerald-500/20 shrink-0">
+                      <img
+                        src={prod.image}
+                        alt={prod.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 truncate">
+                          {prod.badge}
+                        </span>
+                        <span className="text-[11px] font-mono text-emerald-300">
+                          {prod.caffeineMg}mg
+                        </span>
+                      </div>
+                      <h4 className="text-base font-bold text-white truncate mt-0.5">{prod.name}</h4>
+                      <p className="text-xs text-emerald-200/70 truncate">{prod.tagline}</p>
+                      <div className="mt-2 flex items-center gap-3 text-xs font-mono">
+                        <span className="text-white font-bold">${prod.priceSingle.toFixed(2)}</span>
+                        <span className="text-emerald-300/60">/</span>
+                        <span className="text-emerald-300 font-bold">${prod.pricePack12.toFixed(2)} (12-pk)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-emerald-500/15 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-mono text-emerald-300/60 truncate">
+                      ID: {prod.id}
+                    </span>
+                    <button
+                      onClick={() => setDeleteConfirmProduct(prod)}
+                      className="py-1.5 px-3 rounded-lg bg-red-950/50 hover:bg-red-900/70 text-red-300 hover:text-white border border-red-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 1: Orders Overview (Strictly Read-Only Analytics) */}
         {activeTab === 'sales' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1042,8 +1037,8 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
                 <div className="text-2xl font-bold font-mono text-white">
                   {allOrders.length} Orders
                 </div>
-                <div className="text-[11px] text-emerald-300">
-                  Full control: Add &amp; Delete enabled
+                <div className="text-[11px] text-emerald-300/80">
+                  Read-only consumer audit view
                 </div>
               </div>
 
@@ -1056,7 +1051,7 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
                   {totalCasesInStock} Cases
                 </div>
                 <div className="text-[11px] text-emerald-200/60">
-                  Across 6 organic flavor profiles
+                  Across {products.length} organic flavor profiles
                 </div>
               </div>
 
@@ -1074,14 +1069,14 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
               </div>
             </div>
 
-            {/* Orders Management Actions Bar */}
+            {/* Orders Overview Actions Bar (Read-Only) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold font-display text-white">
-                  All Customer Orders
+                  Customer Orders Audit Log
                 </h3>
                 <span className="text-xs text-emerald-300/70 font-mono">
-                  ({filteredOrders.length} shown)
+                  ({filteredOrders.length} shown · Read-only)
                 </span>
               </div>
 
@@ -1102,18 +1097,10 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
                     <option value="delivered">Delivered</option>
                   </select>
                 </div>
-
-                <button
-                  onClick={() => setIsCreateOrderOpen(true)}
-                  className="py-1.5 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center gap-1 shadow-sm transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Order</span>
-                </button>
               </div>
             </div>
 
-            {/* Orders Table with Status Dropdown and Delete Button */}
+            {/* Orders Table (Read-Only) */}
             <div className="overflow-x-auto rounded-2xl border border-emerald-500/20 bg-emerald-950/40">
               <table className="w-full text-left text-xs">
                 <thead className="bg-emerald-950/80 border-b border-emerald-500/20 text-emerald-400 uppercase tracking-wider text-[10px]">
@@ -1124,8 +1111,7 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
                     <th className="py-3 px-4">Items Summary</th>
                     <th className="py-3 px-4">Carrier &amp; Tracking</th>
                     <th className="py-3 px-4">Total</th>
-                    <th className="py-3 px-4">Live Status</th>
-                    <th className="py-3 px-4 text-center">Admin Actions</th>
+                    <th className="py-3 px-4">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-emerald-500/10 text-emerald-100">
@@ -1149,34 +1135,15 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
                           ${(ord.total || 0).toFixed(2)}
                         </td>
                         <td className="py-3 px-4">
-                          {/* Live Status Dropdown for Admin */}
-                          <select
-                            value={ord.status}
-                            onChange={(e) => handleUpdateOrderStatus(ord, e.target.value as UserOrder['status'])}
-                            className="py-1 px-2 rounded-lg bg-emerald-950/90 border border-emerald-500/30 text-emerald-200 text-xs font-semibold focus:outline-none focus:border-emerald-400 cursor-pointer"
-                          >
-                            <option value="Confirmed">Confirmed</option>
-                            <option value="Processing">Processing</option>
-                            <option value="In Transit">In Transit</option>
-                            <option value="Out for Delivery">Out for Delivery</option>
-                            <option value="Delivered">Delivered</option>
-                          </select>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          {/* Admin Delete Order Button */}
-                          <button
-                            onClick={() => setDeleteConfirmOrder(ord)}
-                            className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-300 hover:text-white border border-red-500/30 transition-colors"
-                            title="Delete this order permanently"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <span className="text-xs font-semibold text-emerald-300">
+                            {ord.status}
+                          </span>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-emerald-200/60">
+                      <td colSpan={7} className="py-8 text-center text-emerald-200/60">
                         No orders match the selected filter.
                       </td>
                     </tr>
@@ -1526,15 +1493,15 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
         )}
       </div>
 
-      {/* MODAL 1: CREATE NEW ORDER (Admin Power) */}
-      {isCreateOrderOpen && (
+      {/* MODAL 1: ADD NEW PRODUCT (Admin Power) */}
+      {isAddProductOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in">
           <div
-            className="relative w-full max-w-lg glass-panel-elevated rounded-3xl p-6 sm:p-8 border border-emerald-400/40 text-left space-y-4 max-h-[90vh] overflow-y-auto"
+            className="relative w-full max-w-xl glass-panel-elevated rounded-3xl p-6 sm:p-8 border border-emerald-400/40 text-left space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setIsCreateOrderOpen(false)}
+              onClick={() => setIsAddProductOpen(false)}
               className="absolute top-5 right-5 p-2 rounded-xl text-emerald-300 hover:text-white hover:bg-emerald-950/80 transition-colors"
             >
               <X className="w-5 h-5" />
@@ -1545,103 +1512,191 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
                 <PlusCircle className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-xl font-bold font-display text-white">Create New Order</h3>
-                <p className="text-xs text-emerald-200/70">Add a custom customer or wholesale order</p>
+                <h3 className="text-xl font-bold font-display text-white">Add New Organic Product</h3>
+                <p className="text-xs text-emerald-200/70">Publish a new botanical drink flavor directly to the storefront</p>
               </div>
             </div>
 
-            <form onSubmit={handleCreateNewOrder} className="space-y-3.5">
+            <form onSubmit={handleCreateProductSubmit} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
-                    Customer Name:
+                    Product Name *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Rahul Sharma"
-                    value={newOrderCustomerName}
-                    onChange={(e) => setNewOrderCustomerName(e.target.value)}
+                    placeholder="e.g. Alpine Pine"
+                    value={newProdName}
+                    onChange={(e) => setNewProdName(e.target.value)}
                     className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs placeholder-emerald-300/40 focus:outline-none focus:border-emerald-400"
                   />
                 </div>
                 <div>
                   <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
-                    Customer Email:
+                    Tagline
                   </label>
                   <input
-                    type="email"
-                    required
-                    placeholder="customer@example.com"
-                    value={newOrderCustomerEmail}
-                    onChange={(e) => setNewOrderCustomerEmail(e.target.value)}
+                    type="text"
+                    placeholder="e.g. Crisp Cedar & Lime"
+                    value={newProdTagline}
+                    onChange={(e) => setNewProdTagline(e.target.value)}
                     className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs placeholder-emerald-300/40 focus:outline-none focus:border-emerald-400"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
-                  Ordered Items &amp; Flavor Pack:
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 2x Green Spring (12-Pack Case)"
-                  value={newOrderItems}
-                  onChange={(e) => setNewOrderItems(e.target.value)}
-                  className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs placeholder-emerald-300/40 focus:outline-none focus:border-emerald-400"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
-                    Total Amount ($ USD):
+                    Badge Label
+                  </label>
+                  <input
+                    type="text"
+                    value={newProdBadge}
+                    onChange={(e) => setNewProdBadge(e.target.value)}
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
+                    Single Can ($)
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     required
-                    value={newOrderTotal}
-                    onChange={(e) => setNewOrderTotal(e.target.value)}
+                    value={newProdPriceSingle}
+                    onChange={(e) => setNewProdPriceSingle(e.target.value)}
                     className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs font-mono focus:outline-none focus:border-emerald-400"
                   />
                 </div>
                 <div>
                   <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
-                    Initial Status:
+                    12-Pack Case ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={newProdPricePack12}
+                    onChange={(e) => setNewProdPricePack12(e.target.value)}
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
+                    Caffeine (mg)
+                  </label>
+                  <input
+                    type="number"
+                    value={newProdCaffeine}
+                    onChange={(e) => setNewProdCaffeine(e.target.value)}
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
+                    Calories
+                  </label>
+                  <input
+                    type="number"
+                    value={newProdCalories}
+                    onChange={(e) => setNewProdCalories(e.target.value)}
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
+                    Sugar (g)
+                  </label>
+                  <input
+                    type="number"
+                    value={newProdSugar}
+                    onChange={(e) => setNewProdSugar(e.target.value)}
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
+                    Color Theme
                   </label>
                   <select
-                    value={newOrderStatus}
-                    onChange={(e) => setNewOrderStatus(e.target.value as UserOrder['status'])}
+                    value={newProdColorScheme}
+                    onChange={(e) => setNewProdColorScheme(e.target.value as 'emerald' | 'purple' | 'amber' | 'cyan' | 'ruby' | 'gold')}
                     className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs focus:outline-none focus:border-emerald-400"
                   >
-                    <option value="Confirmed">Confirmed</option>
-                    <option value="Processing">Processing</option>
-                    <option value="In Transit">In Transit</option>
-                    <option value="Out for Delivery">Out for Delivery</option>
-                    <option value="Delivered">Delivered</option>
+                    <option value="emerald">Emerald</option>
+                    <option value="purple">Purple</option>
+                    <option value="amber">Amber</option>
+                    <option value="cyan">Cyan</option>
+                    <option value="ruby">Ruby</option>
+                    <option value="gold">Gold</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
-                  Assigned Carrier:
+                  Can Artwork Preset
+                </label>
+                <select
+                  value={newProdImage}
+                  onChange={(e) => setNewProdImage(e.target.value)}
+                  className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs focus:outline-none focus:border-emerald-400"
+                >
+                  <option value="/images/can_green_spring.jpg">Green Spring Can</option>
+                  <option value="/images/can_wild_berry.jpg">Wild Berry Can</option>
+                  <option value="/images/can_tropic_rush.jpg">Tropic Rush Can</option>
+                  <option value="/images/can_glacier_frost.jpg">Glacier Frost Can</option>
+                  <option value="/images/can_crimson_zen.jpg">Crimson Zen Can</option>
+                  <option value="/images/can_golden_dawn.jpg">Golden Dawn Can</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
+                  Flavor Notes (comma-separated)
                 </label>
                 <input
                   type="text"
-                  value={newOrderCarrier}
-                  onChange={(e) => setNewOrderCarrier(e.target.value)}
+                  value={newProdFlavorNotes}
+                  onChange={(e) => setNewProdFlavorNotes(e.target.value)}
                   className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
+                  Key Botanicals (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={newProdKeyBotanicals}
+                  onChange={(e) => setNewProdKeyBotanicals(e.target.value)}
+                  className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono text-emerald-300/80 mb-1">
+                  Description
+                </label>
+                <textarea
+                  rows={2}
+                  value={newProdDescription}
+                  onChange={(e) => setNewProdDescription(e.target.value)}
+                  className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/20 text-white text-xs focus:outline-none focus:border-emerald-400 resize-none"
                 />
               </div>
 
               <div className="pt-3 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsCreateOrderOpen(false)}
+                  onClick={() => setIsAddProductOpen(false)}
                   className="py-2.5 px-4 rounded-xl glass-panel text-emerald-300 hover:text-white border border-emerald-500/30 text-xs font-semibold"
                 >
                   Cancel
@@ -1651,7 +1706,7 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
                   className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Create Order</span>
+                  <span>Publish Product to Store</span>
                 </button>
               </div>
             </form>
@@ -1659,8 +1714,8 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
         </div>
       )}
 
-      {/* MODAL 2: CONFIRM DELETE ORDER (Admin Power) */}
-      {deleteConfirmOrder && (
+      {/* MODAL 2: CONFIRM REMOVE PRODUCT (Admin Power) */}
+      {deleteConfirmProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
           <div
             className="relative w-full max-w-md glass-panel-elevated rounded-3xl p-6 sm:p-8 border border-red-500/40 text-center space-y-4"
@@ -1671,33 +1726,33 @@ AXOLYT Organic Energy LLC, Cascade Range, OR & Hansi, Haryana Hub.
             </div>
 
             <h3 className="text-xl font-bold font-display text-white">
-              Delete Order #{deleteConfirmOrder.id}?
+              Remove {deleteConfirmProduct.name}?
             </h3>
 
             <p className="text-xs text-red-200/80 leading-relaxed">
-              Are you sure you want to delete this order? This will remove the order permanently from the store and customer tracking records.
+              Are you sure you want to remove this product from the live storefront catalog?
             </p>
 
             <div className="p-3 rounded-xl bg-black/50 border border-emerald-500/20 text-xs font-mono text-left space-y-1">
-              <div><strong className="text-white">Customer:</strong> {deleteConfirmOrder.customerName || 'Customer'}</div>
-              <div><strong className="text-white">Total:</strong> ${deleteConfirmOrder.total.toFixed(2)}</div>
-              <div><strong className="text-white">Items:</strong> {deleteConfirmOrder.items}</div>
+              <div><strong className="text-white">Product ID:</strong> {deleteConfirmProduct.id}</div>
+              <div><strong className="text-white">Single Price:</strong> ${deleteConfirmProduct.priceSingle.toFixed(2)}</div>
+              <div><strong className="text-white">Tagline:</strong> {deleteConfirmProduct.tagline}</div>
             </div>
 
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setDeleteConfirmOrder(null)}
+                onClick={() => setDeleteConfirmProduct(null)}
                 className="flex-1 py-2.5 px-4 rounded-xl glass-panel text-emerald-300 hover:text-white border border-emerald-500/30 text-xs font-semibold"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={handleExecuteDeleteOrder}
+                onClick={handleExecuteRemoveProduct}
                 className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all shadow-lg shadow-red-600/30"
               >
-                Delete Permanently
+                Remove Product
               </button>
             </div>
           </div>

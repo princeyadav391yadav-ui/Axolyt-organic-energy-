@@ -22,12 +22,14 @@ import { OurStoryModal } from './components/OurStoryModal';
 import { AuthModal } from './components/AuthModal';
 import { SearchModal } from './components/SearchModal';
 import { AdminDashboard } from './components/AdminDashboard';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { MobileAppBar } from './components/MobileAppBar';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { PRODUCTS } from './data/products';
 import { Product, CartItem, UserProfile, UserOrder, AppConfig } from './types';
 import { auth, db, testFirestoreConnection, handleFirestoreError, OperationType } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export default function App() {
   // 1. Cart State (Persistent via localStorage)
@@ -38,6 +40,20 @@ export default function App() {
     } catch {
       return [];
     }
+  });
+
+  // 1b. Products Catalog State (Persistent via localStorage & Firestore)
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem('axolyt_products');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // storage unavailable
+    }
+    return PRODUCTS;
   });
 
   // 2. User Profile State (Persistent via localStorage)
@@ -205,6 +221,58 @@ export default function App() {
     );
     return () => unsubConfig();
   }, []);
+
+  // 3c. Sync Products Catalog with Firestore
+  useEffect(() => {
+    const unsubProducts = onSnapshot(
+      collection(db, 'products'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const list: Product[] = [];
+          snapshot.forEach((d) => list.push(d.data() as Product));
+          if (list.length > 0) {
+            setProducts(list);
+            try {
+              localStorage.setItem('axolyt_products', JSON.stringify(list));
+            } catch {
+              // storage unavailable
+            }
+          }
+        }
+      },
+      (err) => {
+        console.warn('Products collection snapshot notice:', err.message);
+      }
+    );
+    return () => unsubProducts();
+  }, []);
+
+  // Admin Power: Add New Product to Store Catalog
+  const handleAddProduct = async (newProd: Product) => {
+    setProducts((prev) => [newProd, ...prev]);
+    try {
+      const updated = [newProd, ...products];
+      localStorage.setItem('axolyt_products', JSON.stringify(updated));
+      await setDoc(doc(db, 'products', newProd.id), newProd);
+    } catch (err) {
+      console.warn('Firestore product creation notice:', err);
+    }
+    addToast('success', 'Product Added to Store!', `${newProd.name} is now live in the store catalog.`);
+  };
+
+  // Admin Power: Remove Product from Store Catalog
+  const handleRemoveProduct = async (productId: string) => {
+    const prodToRemove = products.find((p) => p.id === productId);
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    try {
+      const updated = products.filter((p) => p.id !== productId);
+      localStorage.setItem('axolyt_products', JSON.stringify(updated));
+      await deleteDoc(doc(db, 'products', productId));
+    } catch (err) {
+      console.warn('Firestore product removal notice:', err);
+    }
+    addToast('info', 'Product Removed', `${prodToRemove ? prodToRemove.name : 'Product'} was removed from the store catalog.`);
+  };
 
   // 4. Modal Visibility Controls
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -531,7 +599,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#051109] text-emerald-50 relative selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen bg-[#051109] text-emerald-50 relative selection:bg-emerald-500 selection:text-black pb-20 md:pb-0">
       {/* Real-time Global Announcement Bar (Managed by Admin) */}
       {appConfig.announcementBanner && (
         <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 border-b border-emerald-500/20 py-1.5 px-4 text-center text-xs font-semibold text-emerald-200 flex items-center justify-center gap-2 relative z-40">
@@ -564,7 +632,7 @@ export default function App() {
       <main>
         {/* A. Hero Section */}
         <Hero
-          products={PRODUCTS}
+          products={products}
           onAddToCart={handleAddToCart}
           onOpenDetails={(p) => setSelectedProductDetail(p)}
         />
@@ -577,7 +645,7 @@ export default function App() {
 
         {/* D. Product Showcase (Carousel & Grid with Pack Selectors) */}
         <ProductCarousel
-          products={PRODUCTS}
+          products={products}
           onAddToCart={handleAddToCart}
           onOpenDetails={(p) => setSelectedProductDetail(p)}
           searchQuery={searchQuery}
@@ -683,6 +751,7 @@ export default function App() {
         onSelectProduct={(p) => setSelectedProductDetail(p)}
         onOpenIngredients={() => scrollToSection('ingredients')}
         onOpenBlog={() => scrollToSection('blog')}
+        products={products}
       />
 
       {/* Admin Dashboard Command Center */}
@@ -691,6 +760,9 @@ export default function App() {
         onClose={() => setIsAdminOpen(false)}
         user={user}
         orders={user.orders}
+        products={products}
+        onAddProduct={handleAddProduct}
+        onRemoveProduct={handleRemoveProduct}
         onNotify={addToast}
         onAdminAuthenticated={(adminProfile) => {
           setUser((prev) => ({
@@ -701,19 +773,24 @@ export default function App() {
             isLoggedIn: true,
           }));
         }}
-        onOrderAdded={(newOrder) => {
-          setUser((prev) => ({
-            ...prev,
-            orders: [newOrder, ...prev.orders],
-          }));
-        }}
-        onOrderDeleted={(orderId) => {
-          setUser((prev) => ({
-            ...prev,
-            orders: prev.orders.filter((o) => o.id !== orderId),
-          }));
-        }}
       />
+
+      {/* Mobile Native Bottom App Navigation Bar */}
+      <MobileAppBar
+        cartCount={totalCartCount}
+        user={user}
+        onNavigateHome={() => scrollToSection('home')}
+        onNavigateShop={() => scrollToSection('shop')}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenCart={() => setIsCartOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
+      />
+
+      {/* Offline Network Status Banner */}
+      <OfflineIndicator />
+
+      {/* App Toast Notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

@@ -10,6 +10,7 @@ interface SearchModalProps {
   onSelectProduct: (product: Product) => void;
   onOpenIngredients: () => void;
   onOpenBlog: () => void;
+  products?: Product[];
 }
 
 export const SearchModal: React.FC<SearchModalProps> = ({
@@ -18,12 +19,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   onSelectProduct,
   onOpenIngredients,
   onOpenBlog,
+  products = PRODUCTS,
 }) => {
   const [query, setQuery] = useState('');
 
   if (!isOpen) return null;
 
-  const matchedProducts = PRODUCTS.filter((p) =>
+  const matchedProducts = products.filter((p) =>
     p.name.toLowerCase().includes(query.toLowerCase()) ||
     p.description.toLowerCase().includes(query.toLowerCase()) ||
     p.flavorNotes.some((n) => n.toLowerCase().includes(query.toLowerCase())) ||
